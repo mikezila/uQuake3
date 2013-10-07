@@ -28,8 +28,6 @@ namespace SharpBSP
         {
             try
             {
-                string prefix = Application.dataPath + "/maps/";
-                filename = prefix + filename;
                 BSP = new BinaryReader(File.Open(filename, FileMode.Open));
             }
             catch (FileNotFoundException)

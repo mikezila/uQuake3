@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 
 namespace SharpBSP
 {
@@ -21,7 +22,6 @@ namespace SharpBSP
         public Vector3 normal;
         public int[] size;
 
-
         public Face(int texture, int effect, int type, int vertex, int n_vertexes, int meshvert, int n_meshverts, int lm_index, int[] lm_start, int[] lm_size, Vector3 lm_origin, Vector3[] lm_vecs, Vector3 normal, int[] size)
         {
             this.texture = texture;
@@ -39,5 +39,7 @@ namespace SharpBSP
             this.normal = normal;
             this.size = size;
         }
+
+        
     }
 }
