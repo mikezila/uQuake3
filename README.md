@@ -8,16 +8,19 @@ It takes a normal Quake 3 .bsp and loads it into a Unity scene.
 
 ### What parts of the map are recreated?
 
-- Faces and meshes.
-- Textures and their mappings on said faces and meshes.
+- Faces
+-- Polygon, Mesh, Bezier patch types are supported
+- Textures and their mappings on polygon and mesh faces.
 
 ### What parts are not recreated?
 
-- Entities are not used it any way.
-- Bezier curves are implimented but broken horribly.
-- Lightmaps.
+- Entities are not used in any way.  Yet.
+- Bezier patches are rendered, but tesellation is broken, so they're rendered untessellated.
+- Lightmaps aren't yet applied to faces or recreated as textures.
 - Normals.  Unity recalcuates them on its own, though.
 - Liquids, skies, and any other texture that is produced by a shader in Quake 3.
+- Animated textures are missing/don't animate.
+- Textures with transparency (banners, flags, etc) don't have it, yet.
 
 ### How do I use it?
 
@@ -32,5 +35,3 @@ If you use a different map than the one I included you'll need to start the scen
 ### Is this done?
 
 No, I'm still working away at it fiendishly.  I will create good docs and tidy up the code once it's finished.
-
-I'm struggling with forming meshes from Quake 3's bezier patches right now, so if you have any input on how to do that I'd be your best friend forever.
