@@ -13,12 +13,14 @@ namespace SharpBSP
         List<int> trianglesPerRow = new List<int>();
         public List<int> rowIndexes = new List<int>();
         List<Vector3> controls = new List<Vector3>();
+        public List<int> fromFanIndexes = new List<int>();
 
         public BezierPatch(List<Vector3> controls)
         {
             this.controls = controls;
-            tesselate(10);
-
+            //Tesselation is broken, so do 1, for no teselation
+            Tesselate(1);
+            FanToList();
         }
 
         public string PrintInfo()
@@ -41,7 +43,44 @@ namespace SharpBSP
             return blob;
         }
 
-        private void tesselate(int L)
+        private class Triangle
+        {
+            public int v0;
+            public int v1;
+            public int v2;
+            public Triangle()
+            {
+
+            }
+        }
+
+        private void FanToList()
+        {
+            List<Triangle> triList = new List<Triangle>();
+
+            for (int i = 2; i < indexes.Count; i++)
+            {
+                Triangle tri = new Triangle();
+                bool isEven = (i % 2 == 0);  //is this an even or odd triangle?
+
+                tri.v0 = indexes[i - 2];      //always two indexes back
+                tri.v1 = isEven ? indexes[i] : indexes[i - 1];  //alternate the order of the next two
+                tri.v2 = isEven ? indexes[i - 1] : indexes[i];
+
+                //if not degenerate add to the list
+                if (tri.v0 != tri.v1 && tri.v1 != tri.v2 && tri.v2 != tri.v0)
+                    triList.Add(tri);
+            }
+
+            foreach (Triangle tri in triList)
+            {
+                fromFanIndexes.Add(tri.v0);
+                fromFanIndexes.Add(tri.v1);
+                fromFanIndexes.Add(tri.v2);
+            }
+        }
+
+        private void Tesselate(int L)
         {
             // The number of vertices along a side is 1 + num edges
             int L1 = L + 1;

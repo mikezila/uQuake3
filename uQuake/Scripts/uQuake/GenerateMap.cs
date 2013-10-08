@@ -24,24 +24,133 @@ public class GenerateMap : MonoBehaviour
         {
             if (face.type == 2)
             {
-                if (face.n_vertexes > 9)
-                {
-                    continue;
-                }
-                GenerateBezModel(face);
+                GenerateBezObject(face);
                 faceCount++;
-                continue;
             }
-            else if (face.type == 1 || face.type == 3)
+            else if (face.type == 1)
             {
-                GeneratePolygonModel(face);
+                GeneratePolygonObject(face);
                 faceCount++;
-                continue;
             }
-            faceCount++;
+            else if (face.type == 3)
+            {
+                GeneratePolygonObject(face);
+                faceCount++;
+            }
+            else
+            {
+                Debug.Log("Skipped Face " + faceCount.ToString() + " because it was not a polygon, mesh, or bez patch");
+                faceCount++;
+            }
         }
     }
 
+    Mesh GenerateBezMesh(Face face, int patchNumber)
+    {
+        //Calculate how many patches there are using size[]
+        //There are n_patchesX by n_patchesY patches in the grid, each of those
+        //starts at a vert (i,j) in the overall grid
+        int n_patchesX = ((face.size[0]) - 1) / 2;
+        int n_patchesY = ((face.size[1]) - 1) / 2;
+
+
+        //Calculate what [n,m] patch we want by using an index
+        //called patchNumber  Think of patchNumber as if you 
+        //numbered the patches left to right, top to bottom on
+        //the grid in a piece of paper.
+        int pxStep = 0;
+        int pyStep = 0;
+        for (int i = 0; i < patchNumber; i++)
+        {
+            pxStep++;
+            if (pxStep == n_patchesX)
+            {
+                pxStep = 0;
+                pyStep++;
+            }
+        }
+
+        //Create an array the size of the grid, which is given by
+        //size[] on the face object.
+        Vector3[,] vertGrid = new Vector3[face.size[0], face.size[1]];
+
+        //Read the verts for this face into the grid, making sure
+        //that the final shape of the grid matches the size[] of
+        //the face.
+        int gridXstep = 0;
+        int gridYstep = 0;
+        int vertStep = face.vertex;
+        for (int i = 0; i < face.n_vertexes; i++)
+        {
+            vertGrid[gridXstep, gridYstep] = map.vertexLump.verts[vertStep].position;
+            vertStep++;
+            gridXstep++;
+            if (gridXstep == face.size[0])
+            {
+                gridXstep = 0;
+                gridYstep++;
+            }
+        }
+
+        //We now need to pluck out exactly nine vertexes to pass to our
+        //teselate function, so lets calculate the starting vertex of the
+        //3x3 grid of nine vertexes that will make up our patch.
+        //we already know how many patches are in the grid, which we have
+        //as n and m.  There are n by m patches.  Since this method will
+        //create one gameobject at a time, we only need to be able to grab
+        //one.  The starting vertex will be called vi,vj think of vi,vj as x,y
+        //coords into the grid.
+        int vi = 2 * pxStep;
+        int vj = 2 * pyStep;
+        //Now that we have those, we need to get the vert at [vi,vj] and then
+        //the two verts at [vi+1,vj] and [vi+2,vj], and then [vi,vj+1], etc.
+        //the ending vert will at [vi+2,vj+2]
+
+        List<Vector3> bverts = new List<Vector3>();
+
+        //Top row
+        bverts.Add(vertGrid[vi, vj]);
+        bverts.Add(vertGrid[vi + 1, vj]);
+        bverts.Add(vertGrid[vi + 2, vj]);
+
+        //Middle row
+        bverts.Add(vertGrid[vi, vj + 1]);
+        bverts.Add(vertGrid[vi + 1, vj + 1]);
+        bverts.Add(vertGrid[vi + 2, vj + 1]);
+
+        //Bottom row
+        bverts.Add(vertGrid[vi, vj + 2]);
+        bverts.Add(vertGrid[vi + 1, vj + 2]);
+        bverts.Add(vertGrid[vi + 2, vj + 2]);
+
+        //Now that we have our control grid, it's business as usual
+        Mesh bezMesh = new Mesh();
+        bezMesh.name = "BSPfacemesh (bez)";
+        BezierPatch bezPatch = new BezierPatch(bverts);
+        bezMesh.vertices = bezPatch.vertex.ToArray();
+        bezMesh.triangles = bezPatch.fromFanIndexes.ToArray();
+        bezMesh.RecalculateNormals();
+        bezMesh.RecalculateBounds();
+        return bezMesh;
+    }
+
+    void GenerateBezObject(Face face)
+    {
+        int numPatches = ((face.size[0] - 1) / 2) * ((face.size[1] - 1) / 2);
+
+        for (int i = 0; i < numPatches; i++)
+        {
+            GameObject bezObject = new GameObject();
+            bezObject.name = "BSPface (bez) " + faceCount.ToString();
+            bezObject.AddComponent<MeshFilter>();
+            bezObject.GetComponent<MeshFilter>().mesh = GenerateBezMesh(face, i);
+            bezObject.AddComponent<MeshRenderer>();
+            bezObject.AddComponent<MeshCollider>();
+            bezObject.renderer.material.shader = Shader.Find("Diffuse");
+        }
+    }
+
+    // This is deprecated, as it only handles faces with exactly one bez patch.
     GameObject GenerateBezModel(Face face)
     {
         GameObject faceObject = new GameObject("BSPface (bez) " + faceCount.ToString());
@@ -59,11 +168,10 @@ public class GenerateMap : MonoBehaviour
             bstep++;
         }
         BezierPatch bezPatch = new BezierPatch(bverts);
-        Debug.Log(bezPatch.PrintInfo());
 
         worldFace.vertices = bezPatch.vertex.ToArray();
-        //worldFace.triangles = bezPatch.rowIndexes.ToArray();
-        worldFace.SetTriangleStrip(bezPatch.indexes.ToArray(),0);
+        worldFace.triangles = bezPatch.fromFanIndexes.ToArray();
+        //worldFace.SetTriangleStrip(bezPatch.indexes.ToArray(),0);
 
         faceObject.AddComponent<MeshFilter>();
         faceObject.GetComponent<MeshFilter>().mesh = worldFace;
@@ -71,7 +179,7 @@ public class GenerateMap : MonoBehaviour
         //faceObject.GetComponent<MeshFilter>().mesh.Optimize();
         faceObject.GetComponent<MeshFilter>().mesh.RecalculateNormals();
         faceObject.AddComponent<MeshRenderer>();
-        //faceObject.AddComponent<MeshCollider>();
+        faceObject.AddComponent<MeshCollider>();
         faceObject.renderer.material.shader = Shader.Find("Diffuse");
 
         faceObject.transform.parent = gameObject.transform;
@@ -80,7 +188,7 @@ public class GenerateMap : MonoBehaviour
 
     // This takes one face and returns a gameobject complete with
     // mesh, renderer, material with texture, and collider.
-    GameObject GeneratePolygonModel(Face face)
+    GameObject GeneratePolygonObject(Face face)
     {
         GameObject faceObject = new GameObject("BSPface " + faceCount.ToString());
         Mesh worldFace = new Mesh();
@@ -133,10 +241,16 @@ public class GenerateMap : MonoBehaviour
         faceObject.AddComponent<MeshRenderer>();
         faceObject.AddComponent<MeshCollider>();
 
-        //Use a shader that has transparency for the alpha bits
+        //Use a shader that has transparency and you'll get it,
+        //though some textures that shouldn't be transparent end up
+        //having transparent pieces, so I recommend using diffuse for
+        //now an adding it with some smarts later as needed.
         //0.15f is a good value to emulate what it looks like in quake3
-        faceObject.renderer.material.shader = Shader.Find("Transparent/Cutout/Diffuse");
-        faceObject.renderer.material.SetFloat("_Cutoff", 0.15f);
+        //faceObject.renderer.material.shader = Shader.Find("Transparent/Cutout/Diffuse");
+        //faceObject.renderer.material.SetFloat("_Cutoff", 0.15f);
+
+        //Use a diffuse shader for now.  simple.
+        faceObject.renderer.material.shader = Shader.Find("Diffuse");
 
         // Create a material and add it to the object you put this script on and it'll be used
         // on all of the faces.  This is a stand-in tex.
