@@ -7,8 +7,12 @@ using System.Collections.Generic;
 public class GenerateMap : MonoBehaviour
 {
     public Material replacementTexture;
-    public bool replaceTextures = false;
+    public bool useRippedTextures = false;
+    public bool renderBezPatches = false;
     public string mapName;
+    public bool applyLightmaps = false;
+    public int tessellations = 5;
+
     private int faceCount = 0;
 
     public BSPMap map;
@@ -19,12 +23,16 @@ public class GenerateMap : MonoBehaviour
         // represents the map and all its data as a whole
         map = new BSPMap("Assets/Resources/Maps/" + mapName);
 
+
         // Each face is its own gameobject
         foreach (Face face in map.faceLump.faces)
         {
             if (face.type == 2)
             {
-                GenerateBezObject(face);
+                if (renderBezPatches)
+                {
+                    GenerateBezObject(face);
+                }
                 faceCount++;
             }
             else if (face.type == 1)
@@ -72,7 +80,9 @@ public class GenerateMap : MonoBehaviour
 
         //Create an array the size of the grid, which is given by
         //size[] on the face object.
-        Vector3[,] vertGrid = new Vector3[face.size[0], face.size[1]];
+        Vertex[,] vertGrid = new Vertex[face.size[0], face.size[1]];
+        //read texture coords
+        List<Vector2> uvs = new List<Vector2>();
 
         //Read the verts for this face into the grid, making sure
         //that the final shape of the grid matches the size[] of
@@ -82,7 +92,7 @@ public class GenerateMap : MonoBehaviour
         int vertStep = face.vertex;
         for (int i = 0; i < face.n_vertexes; i++)
         {
-            vertGrid[gridXstep, gridYstep] = map.vertexLump.verts[vertStep].position;
+            vertGrid[gridXstep, gridYstep] = map.vertexLump.verts[vertStep];
             vertStep++;
             gridXstep++;
             if (gridXstep == face.size[0])
@@ -109,31 +119,42 @@ public class GenerateMap : MonoBehaviour
         List<Vector3> bverts = new List<Vector3>();
 
         //Top row
-        bverts.Add(vertGrid[vi, vj]);
-        bverts.Add(vertGrid[vi + 1, vj]);
-        bverts.Add(vertGrid[vi + 2, vj]);
+        bverts.Add(vertGrid[vi, vj].position);
+        bverts.Add(vertGrid[vi + 1, vj].position);
+        bverts.Add(vertGrid[vi + 2, vj].position);
+
+        uvs.Add(vertGrid[vi, vj].texcoord);
+        uvs.Add(vertGrid[vi + 1, vj].texcoord);
+        uvs.Add(vertGrid[vi + 2, vj].texcoord);
 
         //Middle row
-        bverts.Add(vertGrid[vi, vj + 1]);
-        bverts.Add(vertGrid[vi + 1, vj + 1]);
-        bverts.Add(vertGrid[vi + 2, vj + 1]);
+        bverts.Add(vertGrid[vi, vj + 1].position);
+        bverts.Add(vertGrid[vi + 1, vj + 1].position);
+        bverts.Add(vertGrid[vi + 2, vj + 1].position);
+
+        uvs.Add(vertGrid[vi, vj + 1].texcoord);
+        uvs.Add(vertGrid[vi + 1, vj + 1].texcoord);
+        uvs.Add(vertGrid[vi + 2, vj + 1].texcoord);
 
         //Bottom row
-        bverts.Add(vertGrid[vi, vj + 2]);
-        bverts.Add(vertGrid[vi + 1, vj + 2]);
-        bverts.Add(vertGrid[vi + 2, vj + 2]);
+        bverts.Add(vertGrid[vi, vj + 2].position);
+        bverts.Add(vertGrid[vi + 1, vj + 2].position);
+        bverts.Add(vertGrid[vi + 2, vj + 2].position);
+
+        uvs.Add(vertGrid[vi, vj + 2].texcoord);
+        uvs.Add(vertGrid[vi + 1, vj + 2].texcoord);
+        uvs.Add(vertGrid[vi + 2, vj + 2].texcoord);
 
         //Now that we have our control grid, it's business as usual
         Mesh bezMesh = new Mesh();
         bezMesh.name = "BSPfacemesh (bez)";
-        BezierPatch bezPatch = new BezierPatch(bverts);
-        bezMesh.vertices = bezPatch.vertex.ToArray();
-        bezMesh.triangles = bezPatch.fromFanIndexes.ToArray();
-        bezMesh.RecalculateNormals();
-        bezMesh.RecalculateBounds();
-        return bezMesh;
+        BezierMesh bezPatch = new BezierMesh(tessellations, bverts, uvs);
+        return bezPatch.mesh;
     }
 
+    // This makes gameobjects for every bez patch in a face
+    // they are tessellated according to the "tessellations" field
+    // in the editor
     void GenerateBezObject(Face face)
     {
         int numPatches = ((face.size[0] - 1) / 2) * ((face.size[1] - 1) / 2);
@@ -141,50 +162,25 @@ public class GenerateMap : MonoBehaviour
         for (int i = 0; i < numPatches; i++)
         {
             GameObject bezObject = new GameObject();
+            bezObject.transform.parent = gameObject.transform;
             bezObject.name = "BSPface (bez) " + faceCount.ToString();
             bezObject.AddComponent<MeshFilter>();
             bezObject.GetComponent<MeshFilter>().mesh = GenerateBezMesh(face, i);
             bezObject.AddComponent<MeshRenderer>();
             bezObject.AddComponent<MeshCollider>();
             bezObject.renderer.material.shader = Shader.Find("Diffuse");
+            if (!useRippedTextures)
+            {
+                bezObject.renderer.material = replacementTexture;
+            }
+            else
+            {
+                UnityEngine.Texture tex = (UnityEngine.Texture)Resources.Load(map.textureLump.textures[face.texture].name.ToString());
+                bezObject.renderer.material.mainTexture = tex;
+            }
         }
     }
 
-    // This is deprecated, as it only handles faces with exactly one bez patch.
-    GameObject GenerateBezModel(Face face)
-    {
-        GameObject faceObject = new GameObject("BSPface (bez) " + faceCount.ToString());
-        Mesh worldFace = new Mesh();
-        worldFace.name = "BSPfacemesh (bez)";
-
-        // Create a bezpatch using the control points from the face
-        // that bezpatch object will then have the verts and indexes inside
-        // it, so grab them.  Get the uvs from the face itself like normal.
-        List<Vector3> bverts = new List<Vector3>();
-        int bstep = face.vertex;
-        for (int i = 0; i < face.n_vertexes; i++)
-        {
-            bverts.Add(map.vertexLump.verts[bstep].position);
-            bstep++;
-        }
-        BezierPatch bezPatch = new BezierPatch(bverts);
-
-        worldFace.vertices = bezPatch.vertex.ToArray();
-        worldFace.triangles = bezPatch.fromFanIndexes.ToArray();
-        //worldFace.SetTriangleStrip(bezPatch.indexes.ToArray(),0);
-
-        faceObject.AddComponent<MeshFilter>();
-        faceObject.GetComponent<MeshFilter>().mesh = worldFace;
-        faceObject.GetComponent<MeshFilter>().mesh.RecalculateBounds();
-        //faceObject.GetComponent<MeshFilter>().mesh.Optimize();
-        faceObject.GetComponent<MeshFilter>().mesh.RecalculateNormals();
-        faceObject.AddComponent<MeshRenderer>();
-        faceObject.AddComponent<MeshCollider>();
-        faceObject.renderer.material.shader = Shader.Find("Diffuse");
-
-        faceObject.transform.parent = gameObject.transform;
-        return faceObject;
-    }
 
     // This takes one face and returns a gameobject complete with
     // mesh, renderer, material with texture, and collider.
@@ -250,11 +246,11 @@ public class GenerateMap : MonoBehaviour
         //faceObject.renderer.material.SetFloat("_Cutoff", 0.15f);
 
         //Use a diffuse shader for now.  simple.
+        //faceObject.renderer.material.shader = Shader.Find("Diffuse");
         faceObject.renderer.material.shader = Shader.Find("Diffuse");
-
         // Create a material and add it to the object you put this script on and it'll be used
         // on all of the faces.  This is a stand-in tex.
-        if (replaceTextures)
+        if (!useRippedTextures)
         {
             faceObject.renderer.material = replacementTexture;
         }
@@ -262,6 +258,14 @@ public class GenerateMap : MonoBehaviour
         {
             UnityEngine.Texture tex = (UnityEngine.Texture)Resources.Load(map.textureLump.textures[face.texture].name.ToString());
             faceObject.renderer.material.mainTexture = tex;
+            if (face.lm_index >= 0 && applyLightmaps)
+            {
+                Texture2D lmap = new Texture2D(face.lm_size[0], face.lm_size[1]);
+                lmap.SetPixels(map.lightmapLump.lightmaps[face.lm_index].GetPixels(face.lm_start[0], face.lm_start[1], face.lm_size[0], face.lm_size[1]));
+                lmap.Apply();
+                faceObject.renderer.material.SetTexture("_LightMap", lmap);
+                faceObject.renderer.material.SetTextureOffset("_LightMap", Vector2.zero);
+            }
         }
 
         faceObject.transform.parent = gameObject.transform;

@@ -23,6 +23,7 @@ namespace SharpBSP
         public NodeLump nodeLump;
         public MeshvertLump meshvertLump;
         public ModelsLump modelsLump;
+        public LightmapLump lightmapLump;
 
         public BSPMap(string filename)
         {
@@ -55,6 +56,7 @@ namespace SharpBSP
             ReadNodes();
             ReadMeshVerts();
             ReadModels();
+            ReadLightmaps();
         }
 
         public void Log(string filename)
@@ -191,6 +193,19 @@ namespace SharpBSP
             for (int i = 0; i < modelCount; i++)
             {
                 modelsLump.models.Add(new Model(new Vector3(BSP.ReadSingle(),BSP.ReadSingle(),BSP.ReadSingle()),new Vector3(BSP.ReadSingle(),BSP.ReadSingle(),BSP.ReadSingle()),BSP.ReadInt32(),BSP.ReadInt32(),BSP.ReadInt32(),BSP.ReadInt32()));
+            }
+        }
+
+        private void ReadLightmaps()
+        {
+            lightmapLump = new LightmapLump();
+            BSP.BaseStream.Seek(header.directory[14].offset, SeekOrigin.Begin);
+            // a lightmap is 49152 bytes.  pretty big.  there are length/49152 lightmaps in the lump
+            int lmapCount = header.directory[14].length / 49152;
+            for (int i = 0; i < lmapCount; i++)
+            {
+                byte[] colors = BSP.ReadBytes(49152);
+                lightmapLump.AddLight(colors);
             }
         }
 
