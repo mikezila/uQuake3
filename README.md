@@ -10,12 +10,12 @@ It takes a normal Quake 3 .bsp and loads it into a Unity scene.
 
 - Faces
 -- Polygon, Mesh, Bezier patch types are supported
+-- Bezier patches are tessellated correctly
 - Textures and their mappings on polygon and mesh faces.
 
 ### What parts are not recreated?
 
 - Entities are not used in any way.  Yet.
-- Bezier patches are rendered, but tesellation is broken, so they're rendered untessellated.
 - Lightmaps aren't yet applied to faces or recreated as textures.
 - Normals.  Unity recalcuates them on its own, though.
 - Liquids, skies, and any other texture that is produced by a shader in Quake 3.
