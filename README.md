@@ -12,7 +12,7 @@ It takes a normal Quake 3 .bsp and loads it into a Unity scene.
 -- Faces
 -- Meshes
 -- Bezier patches
-- Textures are applies and mapped correctly.
+- Textures are applied and mapped correctly.
 
 ### What parts are not recreated?
 
@@ -21,6 +21,7 @@ It takes a normal Quake 3 .bsp and loads it into a Unity scene.
 - Lightmaps are ripped and recreated as textures, but they're broken right now.
 - Normals.  Unity recalcuates them on its own, though.
 - Liquids, skies, and any other texture that is produced by a shader in Quake 3.
+-- Shader textures will be replaced with non-shader versions where possible
 - Animated textures are missing/don't animate.
 - Textures with transparency (banners, flags, etc) don't have it, yet.
 
