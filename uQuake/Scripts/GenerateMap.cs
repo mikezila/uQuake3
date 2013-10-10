@@ -47,7 +47,7 @@ public class GenerateMap : MonoBehaviour
             }
             else
             {
-                Debug.Log("Skipped Face " + faceCount.ToString() + " because it was not a polygon, mesh, or bez patch");
+                Debug.Log("Skipped Face " + faceCount.ToString() + " because it was not a polygon, part of a mesh, or bezier patch.");
                 faceCount++;
             }
         }
@@ -175,7 +175,12 @@ public class GenerateMap : MonoBehaviour
             }
             else
             {
-                UnityEngine.Texture tex = (UnityEngine.Texture)Resources.Load(map.textureLump.textures[face.texture].name.ToString());
+                string texName = map.textureLump.textures[face.texture].name;
+                if (texName.Contains("_trans"))
+                {
+                    texName = texName.Replace("_trans", "");
+                }
+                UnityEngine.Texture tex = (UnityEngine.Texture)Resources.Load(texName);
                 bezObject.renderer.material.mainTexture = tex;
             }
         }
@@ -188,7 +193,7 @@ public class GenerateMap : MonoBehaviour
     {
         GameObject faceObject = new GameObject("BSPface " + faceCount.ToString());
         Mesh worldFace = new Mesh();
-        worldFace.name = "BSPfacemesh";
+        worldFace.name = "BSPmesh (poly/mesh)";
 
         // Rip verts, uvs, and normals
         // I have ripping normals commented because it looks
