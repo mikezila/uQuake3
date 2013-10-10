@@ -36,6 +36,8 @@ If you don't have/don't want to use Quake 3's actual textures, then make sure "U
 
 If you use a different map than the one I included you'll need to start the scene, pause it right away, and them move the fps character controller to a spot inside the map.  I don't process entities yet, so you have to setup your spawn point on your own.
 
+If you want to look at the (currently broken) lightmap support, turn off all the lights in the scene and put a check in "Use Lightmaps".  You must use ripped textures for this to work.
+
 ### Is this done?
 
 No, I'm still working away at it fiendishly.  I will create better documentation and tidy up the code once it's finished.
