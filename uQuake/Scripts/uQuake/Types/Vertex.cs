@@ -28,8 +28,8 @@ namespace SharpBSP
             
             // Lightmaps aren't used for now, but store the
             // data for them anyway.  Inverted, same as above.
-            lmcoord.x = -lmX;
-            lmcoord.y = -lmY;
+            lmcoord.x = lmX;
+            lmcoord.y = lmY;
 
             // Do that swizzlin'.
             // Dunno why it's called swizzle.  An article I was reading called it that.

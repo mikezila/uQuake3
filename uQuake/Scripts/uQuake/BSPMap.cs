@@ -15,80 +15,30 @@ namespace SharpBSP
 
         // These are the objects that hold data extraced from the lumps
         // each one has public fields that hold the data in them
+        // Note that there are many lumps we don't need, so they
+        // aren't processed.  If you want a tool to parse a .bsp
+        // more throughly, check my github/google for "SharpBSP".
         public EntityLump entityLump;
         public TextureLump textureLump;
-        public PlaneLump planeLump;
         public VertexLump vertexLump;
         public FaceLump faceLump;
-        public NodeLump nodeLump;
         public MeshvertLump meshvertLump;
-        public ModelsLump modelsLump;
         public LightmapLump lightmapLump;
 
         public BSPMap(string filename)
         {
-            try
-            {
-                BSP = new BinaryReader(File.Open(filename, FileMode.Open));
-            }
-            catch (FileNotFoundException)
-            {
-                Console.WriteLine("Error: File not found.");
-                throw;
-            }
 
+            // Open the .bsp for reading
+            BSP = new BinaryReader(File.Open(filename, FileMode.Open));
+            
+            // Read our header and lumps
             ReadHeader();
-            if (ValidateBSP())
-            {
-                Console.Write("BSP seems valid...");
-                Debug.Log("BSP seems valid...");
-            }
-            else
-            {
-                Console.Write("Warning: BSP seems invalid/corrupt...");
-            }
-
             ReadEntities();
             ReadTextures();
-            ReadPlanes();
             ReadVertexes();
             ReadFaces();
-            ReadNodes();
             ReadMeshVerts();
-            ReadModels();
             ReadLightmaps();
-        }
-
-        public void Log(string filename)
-        {
-            //This opens up a text file and dumps info about all the lumps in it.
-            //The resulting file is pretty big, and it takes a bit to dump all the info.
-            //Be patient.  Not all types are implimented yet, hence not all types are logged.
-            StreamWriter log = new StreamWriter(File.OpenWrite(filename));
-
-            log.Write("SharpBSP .bsp Report\r\n");
-
-            log.Write(header.PrintInfo());
-            log.Write(entityLump.PrintInfo());
-            log.Write(textureLump.PrintInfo());
-            log.Write(planeLump.PrintInfo());
-            log.Write(nodeLump.PrintInfo());
-            //Leafs
-            //Leaffaces
-            log.Write(modelsLump.PrintInfo());
-            //Brushes
-            //Brushsides
-            log.Write(vertexLump.PrintInfo());
-            log.Write(meshvertLump.PrintInfo());
-            //Effects
-            log.Write(faceLump.PrintInfo());
-            //Lightmaps
-            //Lightvols
-            //Visdata
-
-            // Wrap up log writing before we exit
-            log.Flush();
-            log.Dispose();
         }
 
         private void ReadHeader()
@@ -99,6 +49,8 @@ namespace SharpBSP
         private void ReadEntities()
         {
             // Load Entity String
+            // It's just one big mutha' string with a length defined in the header.
+            // This is the only lump that may not end on an even four-byte block
             BSP.BaseStream.Seek(header.directory[0].offset, SeekOrigin.Begin);
             entityLump = new EntityLump(new String(BSP.ReadChars(header.directory[0].length)));
         }
@@ -119,19 +71,7 @@ namespace SharpBSP
             }
         }
 
-        private void ReadPlanes()
-        {
-            // Calculate how many planes there are to read, then do the damn thing
-            // makes a plane object in the planelump for each one of them
-            planeLump = new PlaneLump();
-            BSP.BaseStream.Seek(header.directory[2].offset, SeekOrigin.Begin);
-            // A plane is 16 bytes, so we use 16 to calculate the number of planes in the lump
-            int planeCount = header.directory[2].length / 16;
-            for (int i = 0; i < planeCount; i++)
-            {
-                planeLump.planes.Add(new Plane(new Vector3(BSP.ReadSingle(), BSP.ReadSingle(), BSP.ReadSingle()), BSP.ReadSingle()));
-            }
-        }
+
 
         private void ReadVertexes()
         {
@@ -160,17 +100,7 @@ namespace SharpBSP
             }
         }
 
-        private void ReadNodes()
-        {
-            nodeLump = new NodeLump();
-            BSP.BaseStream.Seek(header.directory[3].offset, SeekOrigin.Begin);
-            // a node is 36 bytes of data, so length of lump/36 = number of nodes
-            int nodeCount = header.directory[3].length / 36;
-            for (int i = 0; i < nodeCount; i++)
-            {
-                nodeLump.nodes.Add(new Node(BSP.ReadInt32(),new int[] {BSP.ReadInt32(), BSP.ReadInt32()},new int[] {BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32()},new int[] {BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32()}));
-            }
-        }
+
 
         private void ReadMeshVerts()
         {
@@ -184,18 +114,7 @@ namespace SharpBSP
             }
         }
 
-        private void ReadModels()
-        {
-            modelsLump = new ModelsLump();
-            BSP.BaseStream.Seek(header.directory[7].offset, SeekOrigin.Begin);
-            // model is 40 bytes of data, so lumplength/40 = number of models in the lump
-            int modelCount = header.directory[7].length / 40;
-            for (int i = 0; i < modelCount; i++)
-            {
-                modelsLump.models.Add(new Model(new Vector3(BSP.ReadSingle(),BSP.ReadSingle(),BSP.ReadSingle()),new Vector3(BSP.ReadSingle(),BSP.ReadSingle(),BSP.ReadSingle()),BSP.ReadInt32(),BSP.ReadInt32(),BSP.ReadInt32(),BSP.ReadInt32()));
-            }
-        }
-
+        // Lightmaps are broken right now, this code may be to blame, maybe not.
         private void ReadLightmaps()
         {
             lightmapLump = new LightmapLump();
@@ -206,23 +125,6 @@ namespace SharpBSP
             {
                 byte[] colors = BSP.ReadBytes(49152);
                 lightmapLump.AddLight(colors);
-            }
-        }
-
-        public BSPHeader GetHeader()
-        {
-            return header;
-        }
-
-        public bool ValidateBSP()
-        {
-            if (header.magic == "IBSP" && header.version == 46)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
             }
         }
     }

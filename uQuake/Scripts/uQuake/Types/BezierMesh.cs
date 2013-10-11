@@ -86,7 +86,7 @@ public class BezierMesh
     }
 
     // Where the magic happens.
-    public BezierMesh(int level, List<Vector3> control, List<Vector2> controlUvs)
+    public BezierMesh(int level, List<Vector3> control, List<Vector2> controlUvs, List<Vector2> controlUv2s)
     {
         // The mesh we're building
         Mesh patchMesh = new Mesh();
@@ -96,6 +96,7 @@ public class BezierMesh
         List<Vector3> vertex = new List<Vector3>();
         List<int> index = new List<int>();
         List<Vector2> uvs = new List<Vector2>();
+        List<Vector2> uv2s = new List<Vector2>();
 
         // The incoming list is 9 entires, 
         // referenced as p0 through p8 here.
@@ -108,20 +109,26 @@ public class BezierMesh
         // p1s from p1 p4 p7
         // p2s from p2 p5 p8
 
+        List<Vector2> p0suv2;
         List<Vector2> p0suv;
         List<Vector3> p0s;
         p0s = Tessellate(level, control[0], control[3], control[6]);
         p0suv = TessellateUV(level, controlUvs[0], controlUvs[3], controlUvs[6]);
+        p0suv2 = TessellateUV(level, controlUv2s[0], controlUv2s[3], controlUv2s[6]);
 
+        List<Vector2> p1suv2;
         List<Vector2> p1suv;
         List<Vector3> p1s;
         p1s = Tessellate(level, control[1], control[4], control[7]);
         p1suv = TessellateUV(level, controlUvs[1], controlUvs[4], controlUvs[7]);
+        p1suv2 = TessellateUV(level, controlUv2s[1], controlUv2s[4], controlUv2s[7]);
 
+        List<Vector2> p2suv2;
         List<Vector2> p2suv;
         List<Vector3> p2s;
         p2s = Tessellate(level, control[2], control[5], control[8]);
         p2suv = TessellateUV(level, controlUvs[2], controlUvs[5], controlUvs[8]);
+        p2suv2 = TessellateUV(level, controlUv2s[2], controlUv2s[5], controlUv2s[8]);
 
         // Tessellate all those new sets of control points and pack
         // all the results into our vertex array, which we'll return.
@@ -130,6 +137,7 @@ public class BezierMesh
         {
             vertex.AddRange(Tessellate(level, p0s[i], p1s[i], p2s[i]));
             uvs.AddRange(TessellateUV(level, p0suv[i], p1suv[i], p2suv[i]));
+            uv2s.AddRange(TessellateUV(level, p0suv2[i], p1suv2[i], p2suv2[i]));
         }
 
         // This will produce (tessellationLevel + 1)^2 verts
@@ -181,6 +189,7 @@ public class BezierMesh
         patchMesh.vertices = vertex.ToArray();
         patchMesh.triangles = index.ToArray();
         patchMesh.uv = uvs.ToArray();
+        patchMesh.uv2 = uv2s.ToArray();
         patchMesh.RecalculateBounds();
         patchMesh.RecalculateNormals();
         patchMesh.Optimize();

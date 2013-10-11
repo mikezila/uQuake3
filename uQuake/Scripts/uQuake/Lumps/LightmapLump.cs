@@ -17,11 +17,12 @@ namespace SharpBSP
 
         public void AddLight(byte[] rgb)
         {
-            Texture2D tex = new Texture2D(128, 128);
+            Texture2D tex = new Texture2D(128, 128, TextureFormat.RGB24, false);
             List<Color> colors = new List<Color>();
             for (int i = 0; i < 49152; i += 3)
             {
-                colors.Add(new Color(rgb[i], rgb[i + 1], rgb[i + 2]));
+                colors.Add(new Color32(rgb[i], rgb[i + 1], rgb[i + 2], (byte)0.5f));
+                
             }
             tex.SetPixels(colors.ToArray());
             tex.Apply();

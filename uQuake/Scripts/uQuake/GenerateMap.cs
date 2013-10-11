@@ -7,10 +7,10 @@ using System.Collections.Generic;
 public class GenerateMap : MonoBehaviour
 {
     public Material replacementTexture;
-    public bool useRippedTextures = false;
-    public bool renderBezPatches = false;
+    public bool useRippedTextures;
+    public bool renderBezPatches;
     public string mapName;
-    public bool applyLightmaps = false;
+    public bool applyLightmaps;
     public int tessellations = 5;
 
     private int faceCount = 0;
@@ -53,13 +53,62 @@ public class GenerateMap : MonoBehaviour
         }
     }
 
+
+    // This makes gameobjects for every bez patch in a face
+    // they are tessellated according to the "tessellations" field
+    // in the editor
+    void GenerateBezObject(Face face)
+    {
+        int numPatches = ((face.size[0] - 1) / 2) * ((face.size[1] - 1) / 2);
+
+        for (int i = 0; i < numPatches; i++)
+        {
+            GameObject bezObject = new GameObject();
+            bezObject.transform.parent = gameObject.transform;
+            bezObject.name = "BSPface (bez) " + faceCount.ToString();
+            bezObject.AddComponent<MeshFilter>();
+            bezObject.GetComponent<MeshFilter>().mesh = GenerateBezMesh(face, i);
+            bezObject.AddComponent<MeshRenderer>();
+            bezObject.AddComponent<MeshCollider>();
+            bezObject.renderer.material = FetchMaterial(face);
+        }
+    }
+
+
+    // This takes one face and generates a gameobject complete with
+    // mesh, renderer, material with texture, and collider.
+    void GeneratePolygonObject(Face face)
+    {
+        GameObject faceObject = new GameObject("BSPface " + faceCount.ToString());
+
+        // Our GeneratePolygonMesh will optimze and add the UVs for us
+        faceObject.AddComponent<MeshFilter>();
+        faceObject.GetComponent<MeshFilter>().mesh = GeneratePolygonMesh(face);
+        faceObject.AddComponent<MeshRenderer>();
+        faceObject.AddComponent<MeshCollider>();
+        if (useRippedTextures)
+        {
+            faceObject.renderer.material = FetchMaterial(face);
+        }
+        else
+        {
+            faceObject.renderer.material = replacementTexture;
+        }
+        faceObject.transform.parent = gameObject.transform;
+    }
+
+    // This forms a mesh from a bez patch of your choice
+    // from the face of your choice.
+    // It's ready to render with tex coords and all.
     Mesh GenerateBezMesh(Face face, int patchNumber)
     {
         //Calculate how many patches there are using size[]
         //There are n_patchesX by n_patchesY patches in the grid, each of those
         //starts at a vert (i,j) in the overall grid
+        //We don't actually need to know how many are on the Y length
+        //but the forumla is here for historical/academic purposes
         int n_patchesX = ((face.size[0]) - 1) / 2;
-        int n_patchesY = ((face.size[1]) - 1) / 2;
+        //int n_patchesY = ((face.size[1]) - 1) / 2;
 
 
         //Calculate what [n,m] patch we want by using an index
@@ -81,8 +130,6 @@ public class GenerateMap : MonoBehaviour
         //Create an array the size of the grid, which is given by
         //size[] on the face object.
         Vertex[,] vertGrid = new Vertex[face.size[0], face.size[1]];
-        //read texture coords
-        List<Vector2> uvs = new List<Vector2>();
 
         //Read the verts for this face into the grid, making sure
         //that the final shape of the grid matches the size[] of
@@ -118,6 +165,11 @@ public class GenerateMap : MonoBehaviour
 
         List<Vector3> bverts = new List<Vector3>();
 
+        //read texture/lightmap coords while we're at it
+        //they will be tessellated as well.
+        List<Vector2> uvs = new List<Vector2>();
+        List<Vector2> uv2s = new List<Vector2>();
+
         //Top row
         bverts.Add(vertGrid[vi, vj].position);
         bverts.Add(vertGrid[vi + 1, vj].position);
@@ -126,6 +178,10 @@ public class GenerateMap : MonoBehaviour
         uvs.Add(vertGrid[vi, vj].texcoord);
         uvs.Add(vertGrid[vi + 1, vj].texcoord);
         uvs.Add(vertGrid[vi + 2, vj].texcoord);
+
+        uv2s.Add(vertGrid[vi, vj].lmcoord);
+        uv2s.Add(vertGrid[vi + 1, vj].lmcoord);
+        uv2s.Add(vertGrid[vi + 2, vj].lmcoord);
 
         //Middle row
         bverts.Add(vertGrid[vi, vj + 1].position);
@@ -136,6 +192,10 @@ public class GenerateMap : MonoBehaviour
         uvs.Add(vertGrid[vi + 1, vj + 1].texcoord);
         uvs.Add(vertGrid[vi + 2, vj + 1].texcoord);
 
+        uv2s.Add(vertGrid[vi, vj + 1].lmcoord);
+        uv2s.Add(vertGrid[vi + 1, vj + 1].lmcoord);
+        uv2s.Add(vertGrid[vi + 2, vj + 1].lmcoord);
+
         //Bottom row
         bverts.Add(vertGrid[vi, vj + 2].position);
         bverts.Add(vertGrid[vi + 1, vj + 2].position);
@@ -145,53 +205,21 @@ public class GenerateMap : MonoBehaviour
         uvs.Add(vertGrid[vi + 1, vj + 2].texcoord);
         uvs.Add(vertGrid[vi + 2, vj + 2].texcoord);
 
+        uv2s.Add(vertGrid[vi, vj + 2].lmcoord);
+        uv2s.Add(vertGrid[vi + 1, vj + 2].lmcoord);
+        uv2s.Add(vertGrid[vi + 2, vj + 2].lmcoord);
+
         //Now that we have our control grid, it's business as usual
         Mesh bezMesh = new Mesh();
         bezMesh.name = "BSPfacemesh (bez)";
-        BezierMesh bezPatch = new BezierMesh(tessellations, bverts, uvs);
+        BezierMesh bezPatch = new BezierMesh(tessellations, bverts, uvs, uv2s);
         return bezPatch.mesh;
     }
 
-    // This makes gameobjects for every bez patch in a face
-    // they are tessellated according to the "tessellations" field
-    // in the editor
-    void GenerateBezObject(Face face)
+    // Generate a mesh for a simple polygon/mesh face
+    // It's ready to render with tex coords and all.
+    Mesh GeneratePolygonMesh(Face face)
     {
-        int numPatches = ((face.size[0] - 1) / 2) * ((face.size[1] - 1) / 2);
-
-        for (int i = 0; i < numPatches; i++)
-        {
-            GameObject bezObject = new GameObject();
-            bezObject.transform.parent = gameObject.transform;
-            bezObject.name = "BSPface (bez) " + faceCount.ToString();
-            bezObject.AddComponent<MeshFilter>();
-            bezObject.GetComponent<MeshFilter>().mesh = GenerateBezMesh(face, i);
-            bezObject.AddComponent<MeshRenderer>();
-            bezObject.AddComponent<MeshCollider>();
-            bezObject.renderer.material.shader = Shader.Find("Diffuse");
-            if (!useRippedTextures)
-            {
-                bezObject.renderer.material = replacementTexture;
-            }
-            else
-            {
-                string texName = map.textureLump.textures[face.texture].name;
-                if (texName.Contains("_trans"))
-                {
-                    texName = texName.Replace("_trans", "");
-                }
-                UnityEngine.Texture tex = (UnityEngine.Texture)Resources.Load(texName);
-                bezObject.renderer.material.mainTexture = tex;
-            }
-        }
-    }
-
-
-    // This takes one face and returns a gameobject complete with
-    // mesh, renderer, material with texture, and collider.
-    GameObject GeneratePolygonObject(Face face)
-    {
-        GameObject faceObject = new GameObject("BSPface " + faceCount.ToString());
         Mesh worldFace = new Mesh();
         worldFace.name = "BSPface (poly/mesh)";
 
@@ -200,22 +228,22 @@ public class GenerateMap : MonoBehaviour
         // like it's better to just let Unity recalculate them for us.
         List<Vector3> verts = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
-        //List<Vector3> normals = new List<Vector3>();
+        List<Vector2> uv2s = new List<Vector2>();
         int vstep = face.vertex;
         for (int i = 0; i < face.n_vertexes; i++)
         {
             verts.Add(map.vertexLump.verts[vstep].position);
             uvs.Add(map.vertexLump.verts[vstep].texcoord);
-            // normals.Add(map.vertexLump.verts[vstep].normal);
+            uv2s.Add(map.vertexLump.verts[vstep].lmcoord);
             vstep++;
         }
 
         // add the verts, uvs, and normals we ripped to the gameobjects mesh filter
         worldFace.vertices = verts.ToArray();
-        //worldFace.normals = normals.ToArray();
 
         // Add the texture co-ords (or UVs) to the face/mesh
         worldFace.uv = uvs.ToArray();
+        worldFace.uv2 = uv2s.ToArray();
 
         // Rip meshverts / triangles
         List<int> mverts = new List<int>();
@@ -229,60 +257,58 @@ public class GenerateMap : MonoBehaviour
         // add the meshverts to the object being built
         worldFace.triangles = mverts.ToArray();
 
-        // bring it all together.
-        // I'm not sure if it's needed to call recalculatebound and optimze
-        // but I guess it can't hurt.  Recalculating normals gives better results
-        // than using the ones from the map, but I could be ripping them/converting
-        // them wrong.  Will investigate later maybe.  Working as-is for now.
-        faceObject.AddComponent<MeshFilter>();
-        faceObject.GetComponent<MeshFilter>().mesh = worldFace;
-        faceObject.GetComponent<MeshFilter>().mesh.RecalculateBounds();
-        faceObject.GetComponent<MeshFilter>().mesh.Optimize();
-        faceObject.GetComponent<MeshFilter>().mesh.RecalculateNormals();
-        faceObject.AddComponent<MeshRenderer>();
-        faceObject.AddComponent<MeshCollider>();
+        // Let Unity do some heavy lifting for us
+        worldFace.RecalculateBounds();
+        worldFace.RecalculateNormals();
+        worldFace.Optimize();
 
-        //Use a shader that has transparency and you'll get it,
-        //though some textures that shouldn't be transparent end up
-        //having transparent pieces, so I recommend using diffuse for
-        //now an adding it with some smarts later as needed.
-        //0.15f is a good value to emulate what it looks like in quake3
-        //faceObject.renderer.material.shader = Shader.Find("Transparent/Cutout/Diffuse");
-        //faceObject.renderer.material.SetFloat("_Cutoff", 0.15f);
-
-        //Use a diffuse shader for now.  simple.
-        //faceObject.renderer.material.shader = Shader.Find("Diffuse");
-        faceObject.renderer.material.shader = Shader.Find("Diffuse");
-        // Create a material and add it to the object you put this script on and it'll be used
-        // on all of the faces.  This is a stand-in tex.
-        if (!useRippedTextures)
-        {
-            faceObject.renderer.material = replacementTexture;
-        }
-        else
-        {
-            string texName = map.textureLump.textures[face.texture].name;
-            if (texName.Contains("_trans"))
-            {
-                texName = texName.Replace("_trans", "");
-            }
-            UnityEngine.Texture tex = (UnityEngine.Texture)Resources.Load(texName);
-            faceObject.renderer.material.mainTexture = tex;
-            if (face.lm_index >= 0 && applyLightmaps)
-            {
-                Texture2D lmap = new Texture2D(face.lm_size[0], face.lm_size[1]);
-                lmap.SetPixels(map.lightmapLump.lightmaps[face.lm_index].GetPixels(face.lm_start[0], face.lm_start[1], face.lm_size[0], face.lm_size[1]));
-                lmap.Apply();
-                faceObject.renderer.material.SetTexture("_LightMap", lmap);
-                faceObject.renderer.material.SetTextureOffset("_LightMap", Vector2.zero);
-            }
-        }
-
-        faceObject.transform.parent = gameObject.transform;
-        return faceObject;
+        return worldFace;
     }
 
+    // This returns a material with the correct texture for a given face
+    Material FetchMaterial(Face face)
+    {
+        string texName = map.textureLump.textures[face.texture].name;
 
+        // Remove some common shader modifiers to get normal
+        // textures instead
+        texName = texName.Replace("_hell", "");
+        texName = texName.Replace("_trans", "");
+        texName = texName.Replace("flat_400", "");
+        texName = texName.Replace("_750", "");
+
+        // Load the primary texture for the face from the texture lump
+        UnityEngine.Texture tex = (UnityEngine.Texture)Resources.Load(texName);
+
+        // Lightmapping is on, so calc the lightmaps
+        if (face.lm_index >= 0 && applyLightmaps)
+        {
+            // Pick a shader that supports lightmaps
+            Material bspMaterial = new Material(Shader.Find("Legacy Shaders/Lightmapped/Diffuse"));
+
+            // Make a new Texture2D out of the piece of the lightmap we want
+            // this data is stored in the face.
+            //Texture2D lmap = new Texture2D(face.lm_size[0], face.lm_size[1]);
+            //lmap.SetPixels(map.lightmapLump.lightmaps[face.lm_index].GetPixels(face.lm_start[0], face.lm_start[1], face.lm_size[0], face.lm_size[1]));
+            //lmap.Apply();
+
+            // LM experiment
+            Texture2D lmap = map.lightmapLump.lightmaps[face.lm_index];
+
+            // Put the textures in the shader.
+            bspMaterial.mainTexture = tex;
+            bspMaterial.SetTexture("_LightMap", lmap);
+
+            return bspMaterial;
+        }
+        else // Lightmapping is off, so don't.
+        {
+            Material bspMaterial = new Material(Shader.Find("Diffuse"));
+            bspMaterial.mainTexture = tex;
+            return bspMaterial;
+        }
+
+    }
 
 }
 
