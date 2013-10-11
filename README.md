@@ -9,21 +9,21 @@ It takes a normal Quake 3 .bsp and loads it into a Unity scene.
 ### What parts of the map are recreated?
 
 - Level geometry is 100% working.
--- Faces
--- Meshes
--- Bezier patches
+    - Polygons
+    - Meshes
+    - Bezier patches
 - Textures are applied and mapped correctly.
+- Baked lightmaps are pulled from the .bsp and applied.
 
 ### What parts are not recreated?
 
 - Entities are not used in any way.  Yet.
-- Billboards, like torches.
-- Lightmaps are ripped and recreated as textures, but they're broken right now.
-- Normals.  Unity recalcuates them on its own, though.
+- Billboards, like torches, aren't rendered at all yet.
 - Liquids, skies, and any other texture that is produced by a shader in Quake 3.
--- Shader textures will be replaced with non-shader versions where possible
-- Animated textures are missing/don't animate.
-- Textures with transparency (banners, flags, etc) don't have it, yet.
+    - Shader textures will be replaced with non-shader versions where possible.
+- Animated textures don't animate, or are missing.
+- Textures with transparency (banners, flags, etc) don't have it.
+    - This could be worked around by writing a shader, but I haven't done it.
 
 ### How do I use it?
 
