@@ -37,7 +37,7 @@ If you don't have/don't want to use Quake 3's actual textures, then make sure "U
 
 If you use a different map than the one I included you'll need to start the scene, pause it right away, and them move the fps character controller to a spot inside the map.  I don't process entities yet, so you have to setup your spawn point on your own.
 
-If you want to look at the (currently broken) lightmap support, turn off all the lights in the scene and put a check in "Use Lightmaps".  You must use ripped textures for this to work.
+Lightmaps from the .bsp will be loaded and applied if you check the option for it, but with Unity's shaders the lighting doesn't pop as much as in the original game.  They may look better once I have lights placed around where the light enenties are supposed to be, but I doubt it.  More likely I'll need to find a shader that handles the rgb lightmap better.  Quake 3 also used "lightvols" which were a grid of areas that all would receive fake dynamic lighting for things that weren't the map hull.  When you walk past a light in Quake 3 and you see the light on your gun, it's not because of a dynamic light, it's because of one of those lightvols.  Adding them to Unity is going to be tough, since Unity doesn't have a comparable technology in it already.  It'd probably be easier to just place realtime lights at the points specified in the bsp and tweak from there.
 
 ### Is this done?
 
