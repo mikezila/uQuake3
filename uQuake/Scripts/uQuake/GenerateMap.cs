@@ -53,7 +53,7 @@ public class GenerateMap : MonoBehaviour
         }
     }
 
-
+    #region Object Generation
     // This makes gameobjects for every bez patch in a face
     // they are tessellated according to the "tessellations" field
     // in the editor
@@ -96,7 +96,9 @@ public class GenerateMap : MonoBehaviour
         }
         faceObject.transform.parent = gameObject.transform;
     }
+    #endregion
 
+    #region Mesh Generation
     // This forms a mesh from a bez patch of your choice
     // from the face of your choice.
     // It's ready to render with tex coords and all.
@@ -264,7 +266,9 @@ public class GenerateMap : MonoBehaviour
 
         return worldFace;
     }
+    #endregion
 
+    #region Material Generation
     // This returns a material with the correct texture for a given face
     Material FetchMaterial(Face face)
     {
@@ -307,7 +311,7 @@ public class GenerateMap : MonoBehaviour
             bspMaterial.mainTexture = tex;
             return bspMaterial;
         }
-
+    #endregion
     }
 
 }
