@@ -13,7 +13,7 @@ It takes a normal Quake 3 .bsp and loads it into a Unity scene.
     - Meshes
     - Bezier patches
 - Textures are applied and mapped correctly.
-- Baked lightmaps are pulled from the .bsp and applied.
+- Baked lightmaps are pulled from the .bsp and applied.  Sort of.  They're broken at current until I find a better way to apply them.  They are supported though.
 
 ### What parts are not recreated?
 
@@ -27,18 +27,12 @@ It takes a normal Quake 3 .bsp and loads it into a Unity scene.
 
 ### How do I use it?
 
-Take a .bsp map and put it in the Resources/Maps/ folder.  It has to be a .bsp on its own, not a .pk3 containing a .bsp.  You can open a .pk3 as a .zip file and take the .bsp out of the maps directory inside.
+You'll need the PAK0.PK3 file from a retail Quake 3 install.  The shareware/demo version will probably work fine as well.  Place it in the empty baseq3 folder and open Unity.  You can try using the uQuake.unity scene I provided, but chances are it won't work because of reasons.  If it doesn't, create a new scene, and place an empty at the origin, then attach the "GenerateMap" script to it.  Make sure there's a camera, and put the "MouseCam" script on it, so you can fly around the results.  On the empty you created, there are several options.  Choose what you like.  Lightmaps are broken at current, so they will either not work at all, cause the map generation to fail, or some other oddness will occur.  Turn on rip textures to parse the textures from the PAK0.PK3 file if you like.  Make sure that the "Replacement Texture" material slot has something in it.  I provided a texture of some bricks that you can slap in there on a diffuse material that works well enough.  Set the tesselation to something reasonable, like 5 or 8.  Type in the map name you want, including the .bsp extension.  Like "q3dm1.bsp" or similar.  Make sure that "Map is Inside PK3" is checked.  
 
-Open the uQuake scene I've provided, and select the "worldSpawn" object in the scene.  Change the map name to the name of your .bsp, including the ".bsp" part.  So "q3dm1.bsp" is valid, "q3dm1" is not.
+You can load a .bsp from outside of the .pk3 as well if you like.  Just make a "maps" folder inside the baseq3 folder and place it in there, just like real Quake 3.  In this case make sure "Map is Inside PK3" is unchecked.
 
-To use Quake 3's real textures, open pak0.pak and copy the entire "Textures" folder into the Resources folder inside the Unity project.  Create a folder in the Resources folder called "models", and inside pak0.pak open the models folder.  Copy the "mapobjects" folder into the models folder in the Unity Project.  Then make sure that there is a check in the "Use Ripped Textures" box on the worldSpawn object in the scene.
-
-If you don't have/don't want to use Quake 3's actual textures, then make sure "Use Ripped Textures" is unchecked, and then drag a material onto "Replacement Texture".  Inside the materials folder is a material with some bricks I have provided for you.
-
-If you use a different map than the one I included you'll need to start the scene, pause it right away, and them move the fps character controller to a spot inside the map.  I don't process entities yet, so you have to setup your spawn point on your own.
-
-Lightmaps from the .bsp will be loaded and applied if you check the option for it, but with Unity's shaders the lighting doesn't pop as much as in the original game.  They may look better once I have lights placed around where the light enenties are supposed to be, but I doubt it.  More likely I'll need to find a shader that handles the rgb lightmap better.  Quake 3 also used "lightvols" which were a grid of areas that all would receive fake dynamic lighting for things that weren't the map hull.  When you walk past a light in Quake 3 and you see the light on your gun, it's not because of a dynamic light, it's because of one of those lightvols.  Adding them to Unity is going to be tough, since Unity doesn't have a comparable technology in it already.  It'd probably be easier to just place realtime lights at the points specified in the bsp and tweak from there.
+Let it rip.  Hit play, wait a while, currently around 20 seconds for larger maps on quicker computer, and then fly around.  That's it.
 
 ### Is this done?
 
-No, I'm still working away at it fiendishly.  I will create better documentation and tidy up the code once it's finished.
+No, I'm still working away at it.  I will create better documentation and tidy up the code once it's finished.  I just recently returned to this after sharpening my C# skills a ton, so I'm currently in the process of refactoring some pretty embarassing code, and cleaning up here and there.  I'll see about maybe providing a simple .dll to use once I have it hammered out, so you can have Quake 3 map support in your games and tools

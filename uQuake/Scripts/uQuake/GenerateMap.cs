@@ -3,6 +3,8 @@ using System;
 using SharpBSP;
 using System.Collections;
 using System.Collections.Generic;
+using Ionic.Zip;
+using System.IO;
 
 public class GenerateMap : MonoBehaviour
 {
@@ -10,19 +12,24 @@ public class GenerateMap : MonoBehaviour
     public bool useRippedTextures;
     public bool renderBezPatches;
     public string mapName;
+    public bool mapIsInsidePK3;
     public bool applyLightmaps;
     public int tessellations = 5;
-
     private int faceCount = 0;
-
-    public BSPMap map;
+    private BSPMap map;
+    private ZipFile pak;
 
     void Start()
-    {
+    {        
+        // Open the .pk3 file to pull goodies from.
+        pak = ZipFile.Read("Assets/baseq3/PAK0.PK3");
+
         // Create a new BSPmap, which is an object that
         // represents the map and all its data as a whole
-        map = new BSPMap("Assets/Resources/Maps/" + mapName);
-
+        if (mapIsInsidePK3)
+            map = new BSPMap(mapName, true);
+        else
+            map = new BSPMap("Assets/baseq3/maps/" + mapName, false);
 
         // Each face is its own gameobject
         foreach (Face face in map.faceLump.faces)
@@ -34,23 +41,22 @@ public class GenerateMap : MonoBehaviour
                     GenerateBezObject(face);
                 }
                 faceCount++;
-            }
-            else if (face.type == 1)
+            } else if (face.type == 1)
             {
                 GeneratePolygonObject(face);
                 faceCount++;
-            }
-            else if (face.type == 3)
+            } else if (face.type == 3)
             {
                 GeneratePolygonObject(face);
                 faceCount++;
-            }
-            else
+            } else
             {
                 Debug.Log("Skipped Face " + faceCount.ToString() + " because it was not a polygon, mesh, or bez patch");
                 faceCount++;
             }
         }
+
+        pak.Dispose();
     }
 
     #region Object Generation
@@ -59,7 +65,7 @@ public class GenerateMap : MonoBehaviour
     // in the editor
     void GenerateBezObject(Face face)
     {
-        int numPatches = ((face.size[0] - 1) / 2) * ((face.size[1] - 1) / 2);
+        int numPatches = ((face.size [0] - 1) / 2) * ((face.size [1] - 1) / 2);
 
         for (int i = 0; i < numPatches; i++)
         {
@@ -70,7 +76,10 @@ public class GenerateMap : MonoBehaviour
             bezObject.GetComponent<MeshFilter>().mesh = GenerateBezMesh(face, i);
             bezObject.AddComponent<MeshRenderer>();
             bezObject.AddComponent<MeshCollider>();
-            bezObject.renderer.material = FetchMaterial(face);
+            if (useRippedTextures)
+                bezObject.renderer.material = FetchMaterial(face);
+            else
+                bezObject.renderer.material = replacementTexture;
         }
     }
 
@@ -89,8 +98,7 @@ public class GenerateMap : MonoBehaviour
         if (useRippedTextures)
         {
             faceObject.renderer.material = FetchMaterial(face);
-        }
-        else
+        } else
         {
             faceObject.renderer.material = replacementTexture;
         }
@@ -109,7 +117,7 @@ public class GenerateMap : MonoBehaviour
         //starts at a vert (i,j) in the overall grid
         //We don't actually need to know how many are on the Y length
         //but the forumla is here for historical/academic purposes
-        int n_patchesX = ((face.size[0]) - 1) / 2;
+        int n_patchesX = ((face.size [0]) - 1) / 2;
         //int n_patchesY = ((face.size[1]) - 1) / 2;
 
 
@@ -131,7 +139,7 @@ public class GenerateMap : MonoBehaviour
 
         //Create an array the size of the grid, which is given by
         //size[] on the face object.
-        Vertex[,] vertGrid = new Vertex[face.size[0], face.size[1]];
+        Vertex[,] vertGrid = new Vertex[face.size [0], face.size [1]];
 
         //Read the verts for this face into the grid, making sure
         //that the final shape of the grid matches the size[] of
@@ -141,10 +149,10 @@ public class GenerateMap : MonoBehaviour
         int vertStep = face.vertex;
         for (int i = 0; i < face.n_vertexes; i++)
         {
-            vertGrid[gridXstep, gridYstep] = map.vertexLump.verts[vertStep];
+            vertGrid [gridXstep, gridYstep] = map.vertexLump.verts [vertStep];
             vertStep++;
             gridXstep++;
-            if (gridXstep == face.size[0])
+            if (gridXstep == face.size [0])
             {
                 gridXstep = 0;
                 gridYstep++;
@@ -173,43 +181,43 @@ public class GenerateMap : MonoBehaviour
         List<Vector2> uv2s = new List<Vector2>();
 
         //Top row
-        bverts.Add(vertGrid[vi, vj].position);
-        bverts.Add(vertGrid[vi + 1, vj].position);
-        bverts.Add(vertGrid[vi + 2, vj].position);
+        bverts.Add(vertGrid [vi, vj].position);
+        bverts.Add(vertGrid [vi + 1, vj].position);
+        bverts.Add(vertGrid [vi + 2, vj].position);
 
-        uvs.Add(vertGrid[vi, vj].texcoord);
-        uvs.Add(vertGrid[vi + 1, vj].texcoord);
-        uvs.Add(vertGrid[vi + 2, vj].texcoord);
+        uvs.Add(vertGrid [vi, vj].texcoord);
+        uvs.Add(vertGrid [vi + 1, vj].texcoord);
+        uvs.Add(vertGrid [vi + 2, vj].texcoord);
 
-        uv2s.Add(vertGrid[vi, vj].lmcoord);
-        uv2s.Add(vertGrid[vi + 1, vj].lmcoord);
-        uv2s.Add(vertGrid[vi + 2, vj].lmcoord);
+        uv2s.Add(vertGrid [vi, vj].lmcoord);
+        uv2s.Add(vertGrid [vi + 1, vj].lmcoord);
+        uv2s.Add(vertGrid [vi + 2, vj].lmcoord);
 
         //Middle row
-        bverts.Add(vertGrid[vi, vj + 1].position);
-        bverts.Add(vertGrid[vi + 1, vj + 1].position);
-        bverts.Add(vertGrid[vi + 2, vj + 1].position);
+        bverts.Add(vertGrid [vi, vj + 1].position);
+        bverts.Add(vertGrid [vi + 1, vj + 1].position);
+        bverts.Add(vertGrid [vi + 2, vj + 1].position);
 
-        uvs.Add(vertGrid[vi, vj + 1].texcoord);
-        uvs.Add(vertGrid[vi + 1, vj + 1].texcoord);
-        uvs.Add(vertGrid[vi + 2, vj + 1].texcoord);
+        uvs.Add(vertGrid [vi, vj + 1].texcoord);
+        uvs.Add(vertGrid [vi + 1, vj + 1].texcoord);
+        uvs.Add(vertGrid [vi + 2, vj + 1].texcoord);
 
-        uv2s.Add(vertGrid[vi, vj + 1].lmcoord);
-        uv2s.Add(vertGrid[vi + 1, vj + 1].lmcoord);
-        uv2s.Add(vertGrid[vi + 2, vj + 1].lmcoord);
+        uv2s.Add(vertGrid [vi, vj + 1].lmcoord);
+        uv2s.Add(vertGrid [vi + 1, vj + 1].lmcoord);
+        uv2s.Add(vertGrid [vi + 2, vj + 1].lmcoord);
 
         //Bottom row
-        bverts.Add(vertGrid[vi, vj + 2].position);
-        bverts.Add(vertGrid[vi + 1, vj + 2].position);
-        bverts.Add(vertGrid[vi + 2, vj + 2].position);
+        bverts.Add(vertGrid [vi, vj + 2].position);
+        bverts.Add(vertGrid [vi + 1, vj + 2].position);
+        bverts.Add(vertGrid [vi + 2, vj + 2].position);
 
-        uvs.Add(vertGrid[vi, vj + 2].texcoord);
-        uvs.Add(vertGrid[vi + 1, vj + 2].texcoord);
-        uvs.Add(vertGrid[vi + 2, vj + 2].texcoord);
+        uvs.Add(vertGrid [vi, vj + 2].texcoord);
+        uvs.Add(vertGrid [vi + 1, vj + 2].texcoord);
+        uvs.Add(vertGrid [vi + 2, vj + 2].texcoord);
 
-        uv2s.Add(vertGrid[vi, vj + 2].lmcoord);
-        uv2s.Add(vertGrid[vi + 1, vj + 2].lmcoord);
-        uv2s.Add(vertGrid[vi + 2, vj + 2].lmcoord);
+        uv2s.Add(vertGrid [vi, vj + 2].lmcoord);
+        uv2s.Add(vertGrid [vi + 1, vj + 2].lmcoord);
+        uv2s.Add(vertGrid [vi + 2, vj + 2].lmcoord);
 
         //Now that we have our control grid, it's business as usual
         Mesh bezMesh = new Mesh();
@@ -234,9 +242,9 @@ public class GenerateMap : MonoBehaviour
         int vstep = face.vertex;
         for (int i = 0; i < face.n_vertexes; i++)
         {
-            verts.Add(map.vertexLump.verts[vstep].position);
-            uvs.Add(map.vertexLump.verts[vstep].texcoord);
-            uv2s.Add(map.vertexLump.verts[vstep].lmcoord);
+            verts.Add(map.vertexLump.verts [vstep].position);
+            uvs.Add(map.vertexLump.verts [vstep].texcoord);
+            uv2s.Add(map.vertexLump.verts [vstep].lmcoord);
             vstep++;
         }
 
@@ -252,7 +260,7 @@ public class GenerateMap : MonoBehaviour
         int mstep = face.meshvert;
         for (int i = 0; i < face.n_meshverts; i++)
         {
-            mverts.Add(map.meshvertLump.meshVerts[mstep]);
+            mverts.Add(map.meshvertLump.meshVerts [mstep]);
             mstep++;
         }
 
@@ -272,7 +280,7 @@ public class GenerateMap : MonoBehaviour
     // This returns a material with the correct texture for a given face
     Material FetchMaterial(Face face)
     {
-        string texName = map.textureLump.textures[face.texture].name;
+        string texName = map.textureLump.textures [face.texture].name;
 
         // Remove some common shader modifiers to get normal
         // textures instead
@@ -282,7 +290,23 @@ public class GenerateMap : MonoBehaviour
         texName = texName.Replace("_750", "");
 
         // Load the primary texture for the face from the texture lump
-        UnityEngine.Texture tex = (UnityEngine.Texture)Resources.Load(texName);
+        Texture2D tex = new Texture2D(4, 4);
+
+        if (pak.ContainsEntry(texName + ".jpg"))
+        {
+            using (var ms = new MemoryStream())
+            {
+                ZipEntry entry = pak [texName + ".jpg"];
+                entry.Extract(ms);
+                tex.LoadImage(ms.GetBuffer());
+            }
+            tex.Compress(false);
+            tex.filterMode = FilterMode.Bilinear;
+            tex.Apply();
+        } else
+        {
+            return replacementTexture;
+        }
 
         // Lightmapping is on, so calc the lightmaps
         if (face.lm_index >= 0 && applyLightmaps)
@@ -297,21 +321,20 @@ public class GenerateMap : MonoBehaviour
             //lmap.Apply();
 
             // LM experiment
-            Texture2D lmap = map.lightmapLump.lightmaps[face.lm_index];
+            Texture2D lmap = map.lightmapLump.lightmaps [face.lm_index];
 
             // Put the textures in the shader.
             bspMaterial.mainTexture = tex;
             bspMaterial.SetTexture("_LightMap", lmap);
 
             return bspMaterial;
-        }
-        else // Lightmapping is off, so don't.
-        {
+        } else
+        { // Lightmapping is off, so don't.
             Material bspMaterial = new Material(Shader.Find("Diffuse"));
             bspMaterial.mainTexture = tex;
             return bspMaterial;
         }
-    #endregion
+        #endregion
     }
 
 }

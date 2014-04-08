@@ -1,4 +1,5 @@
-﻿
+using System;
+
 namespace SharpBSP
 {
     public class Texture
@@ -7,11 +8,13 @@ namespace SharpBSP
         public int flags;
         public int contents;
 
-        public Texture(string name, int flags, int contents)
+        public Texture(string rawName, int flags, int contents)
         {
-            this.name = name;
+            name = rawName.Replace("\0", string.Empty);
             this.flags = flags;
             this.contents = contents;
+
+
         }
 
         public string GetName()

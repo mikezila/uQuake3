@@ -9,7 +9,6 @@ namespace SharpBSP
     public class LightmapLump
     {
         public List<Texture2D> lightmaps = new List<Texture2D>();
-        private int lmapCount = 0;
 
         public LightmapLump()
         {
@@ -34,12 +33,11 @@ namespace SharpBSP
             List<Color> colors = new List<Color>();
             for (int i = 0; i < 49152; i += 3)
             {
-                colors.Add(new Color32(CalcLight(rgb[i]), CalcLight(rgb[i + 1]), CalcLight(rgb[i + 2]), (byte)1f));
+                colors.Add(new Color32(CalcLight(rgb [i]), CalcLight(rgb [i + 1]), CalcLight(rgb [i + 2]), (byte)1f));
             }
             tex.SetPixels(colors.ToArray());
             tex.Apply();
             lightmaps.Add(tex);
-            lmapCount++;
         }
     }
 }

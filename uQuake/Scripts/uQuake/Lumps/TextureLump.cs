@@ -10,9 +10,12 @@ namespace SharpBSP
         {
         }
 
-        public string GetTextureCount()
-        {
-            return textures.Count.ToString();
+        public int TextureCount
+        { 
+            get
+            {
+                return textures.Count; 
+            } 
         }
 
         public string PrintInfo()
@@ -21,8 +24,7 @@ namespace SharpBSP
             int count = 0;
             foreach (Texture tex in textures)
             {
-                blob += ("Plane " + count + " Name: " + tex.GetName() + "\tFlags: " + tex.flags.ToString() + "\tContents: " + tex.contents.ToString() + "\r\n");
-                count++;
+                blob += ("Texture " + count++ + " Name: " + tex.GetName() + "\tFlags: " + tex.flags.ToString() + "\tContents: " + tex.contents.ToString() + "\r\n");
             }
             return blob;
         }
