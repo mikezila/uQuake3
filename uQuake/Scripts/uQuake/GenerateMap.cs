@@ -17,13 +17,9 @@ public class GenerateMap : MonoBehaviour
     public int tessellations = 5;
     private int faceCount = 0;
     private BSPMap map;
-    private ZipFile pak;
 
-    void Start()
+    void Awake()
     {        
-        // Open the .pk3 file to pull goodies from.
-        pak = ZipFile.Read("Assets/baseq3/PAK0.PK3");
-
         // Create a new BSPmap, which is an object that
         // represents the map and all its data as a whole
         if (mapIsInsidePK3)
@@ -55,8 +51,6 @@ public class GenerateMap : MonoBehaviour
                 faceCount++;
             }
         }
-
-        pak.Dispose();
     }
 
     #region Object Generation
@@ -282,27 +276,14 @@ public class GenerateMap : MonoBehaviour
     {
         string texName = map.textureLump.textures [face.texture].name;
 
-        // Remove some common shader modifiers to get normal
-        // textures instead
-        texName = texName.Replace("_hell", "");
-        texName = texName.Replace("_trans", "");
-        texName = texName.Replace("flat_400", "");
-        texName = texName.Replace("_750", "");
-
         // Load the primary texture for the face from the texture lump
-        Texture2D tex = new Texture2D(4, 4);
+        // The texture lump itself will have already looked over all
+        // available .pk3 files and compiled a dictionary of textures for us.
+        Texture2D tex;
 
-        if (pak.ContainsEntry(texName + ".jpg"))
+        if (map.textureLump.ContainsTexture(texName))
         {
-            using (var ms = new MemoryStream())
-            {
-                ZipEntry entry = pak [texName + ".jpg"];
-                entry.Extract(ms);
-                tex.LoadImage(ms.GetBuffer());
-            }
-            tex.Compress(false);
-            tex.filterMode = FilterMode.Bilinear;
-            tex.Apply();
+            tex = map.textureLump.GetTexture(texName);
         } else
         {
             return replacementTexture;
@@ -314,14 +295,10 @@ public class GenerateMap : MonoBehaviour
             // Pick a shader that supports lightmaps
             Material bspMaterial = new Material(Shader.Find("Legacy Shaders/Lightmapped/Diffuse"));
 
-            // Make a new Texture2D out of the piece of the lightmap we want
-            // this data is stored in the face.
-            //Texture2D lmap = new Texture2D(face.lm_size[0], face.lm_size[1]);
-            //lmap.SetPixels(map.lightmapLump.lightmaps[face.lm_index].GetPixels(face.lm_start[0], face.lm_start[1], face.lm_size[0], face.lm_size[1]));
-            //lmap.Apply();
-
             // LM experiment
             Texture2D lmap = map.lightmapLump.lightmaps [face.lm_index];
+            lmap.Compress(true);
+            lmap.Apply();
 
             // Put the textures in the shader.
             bspMaterial.mainTexture = tex;
