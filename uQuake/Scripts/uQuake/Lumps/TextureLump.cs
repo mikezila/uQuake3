@@ -81,7 +81,7 @@ namespace SharpBSP
         {
             foreach (Texture tex in textures)
             {
-                // The size of the new Texture2D object doesn't matter. It will be replaced (including its size) with the data from the .jpg texture that's getting pulled from the pk3 file.
+                // The size of the new Texture2D object doesn't matter. It will be replaced (including its size) with the data from the texture that's getting pulled from the pk3 file.
                 if (pk3.ContainsEntry(tex.name + ".tga"))
                 {
                     Texture2D readyTex = new Texture2D(4, 4);
@@ -98,8 +98,10 @@ namespace SharpBSP
                     readyTex.Compress(true);
 
                     if (readyTextures.ContainsKey(tex.name))
-                        Debug.Log("Skipping texture with name " + tex.name);
-                    else
+                    {
+                        Debug.Log("Updating texture with name " + tex.name + ".tga");
+                        readyTextures [tex.name] = readyTex;
+                    } else
                         readyTextures.Add(tex.name, readyTex);
                 }
             }

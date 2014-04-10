@@ -19,36 +19,47 @@ public static class TGALoader
     public static Texture2D LoadTGA(Stream TGAStream)
     {
    
-        using (BinaryReader r = new BinaryReader(TGAStream, System.Text.Encoding.Unicode))
+        using (BinaryReader r = new BinaryReader(TGAStream))
         {
             // Skip some header info we don't care about.
             // Even if we did care, we have to move the stream seek point to the beginning,
             // as the previous method in the workflow left it at the end.
             r.BaseStream.Seek(12, SeekOrigin.Begin);
 
-            Int16 width = r.ReadInt16();
-            Int16 height = r.ReadInt16();
+            short width = r.ReadInt16();
+            short height = r.ReadInt16();
+            int bitDepth = r.ReadByte();
 
-            // Skip a couple bytes we don't care about, more header information.
-            r.BaseStream.Seek(2, SeekOrigin.Current);
+            // Skip a byte of header information we don't care about.
+            r.BaseStream.Seek(1, SeekOrigin.Current);
 
             Texture2D tex = new Texture2D(width, height);
             Color32[] pulledColors = new Color32[width * height];
 
-            for (int i = 0; i < width * height; i++)
+            if (bitDepth == 32)
             {
+                for (int i = 0; i < width * height; i++)
+                {
+                    byte red = r.ReadByte();
+                    byte green = r.ReadByte();
+                    byte blue = r.ReadByte();
+                    byte alpha = r.ReadByte();
 
-                float red = Convert.ToSingle(r.ReadByte());  
-                float green = Convert.ToSingle(r.ReadByte());    
-                float blue = Convert.ToSingle(r.ReadByte());
-                float alpha = Convert.ToSingle(r.ReadByte());
-
-                alpha /= 255;
-                green /= 255;
-                blue /= 255;
-                red /= 255;
-   
-                pulledColors [i] = new Color(blue, green, red, alpha);
+                    pulledColors [i] = new Color32(blue, green, red, alpha);
+                }
+            } else if (bitDepth == 24)
+            {
+                for (int i = 0; i < width * height; i++)
+                {
+                    byte red = r.ReadByte();
+                    byte green = r.ReadByte();
+                    byte blue = r.ReadByte();
+                    
+                    pulledColors [i] = new Color32(blue, green, red, 1);
+                }
+            } else
+            {
+                throw new Exception("TGA texture had non 32/24 bit depth.");
             }
 
             tex.SetPixels32(pulledColors);

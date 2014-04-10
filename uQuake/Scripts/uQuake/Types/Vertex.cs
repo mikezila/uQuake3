@@ -37,9 +37,9 @@ namespace SharpBSP
             Swizzle();
         }
 
-        // This converts the verts from the format Q3 uses to the one Unity3D uses
+        // This converts the verts from the format Q3 uses to the one Unity3D uses.
         // Look up the Q3 map/rendering specs if you want the details.
-        // Quake3 also uses an odd scale where 0.03 units is about 1 meter, so scall it way down
+        // Quake3 also uses an odd scale where 0.03 units is about 1 meter, so scale it way down
         // while you're at it.
         private void Swizzle()
         {

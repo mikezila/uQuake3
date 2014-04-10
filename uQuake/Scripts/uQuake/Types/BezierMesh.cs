@@ -199,6 +199,9 @@ public class BezierMesh
         patchMesh.triangles = index.ToArray();
         patchMesh.uv = uvs.ToArray();
         patchMesh.uv2 = uv2s.ToArray();
+
+        // Dunno if these are needed, but why not?
+        // They're actually pretty cheap, considering.
         patchMesh.RecalculateBounds();
         patchMesh.RecalculateNormals();
         patchMesh.Optimize();

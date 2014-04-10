@@ -16,7 +16,9 @@ namespace SharpBSP
             this.contents = contents;
 
             // Remove some common shader modifiers to get normal
-            // textures instead
+            // textures instead. This is kind of a hack, and could
+            // bit you if a texture just happens to have any of these
+            // in its name but isn't actually a shader texture.
             name = name.Replace("_hell", string.Empty);
             name = name.Replace("_trans", string.Empty);
             name = name.Replace("flat_400", string.Empty);

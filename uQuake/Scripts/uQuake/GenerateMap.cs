@@ -47,10 +47,11 @@ public class GenerateMap : MonoBehaviour
                 faceCount++;
             } else
             {
-                Debug.Log("Skipped Face " + faceCount.ToString() + " because it was not a polygon, mesh, or bez patch");
+                Debug.Log("Skipped Face " + faceCount.ToString() + " because it was not a polygon, mesh, or bez patch.");
                 faceCount++;
             }
         }
+        GC.Collect();
     }
 
     #region Object Generation
@@ -66,10 +67,10 @@ public class GenerateMap : MonoBehaviour
             GameObject bezObject = new GameObject();
             bezObject.transform.parent = gameObject.transform;
             bezObject.name = "BSPface (bez) " + faceCount.ToString();
-            bezObject.AddComponent<MeshFilter>();
-            bezObject.GetComponent<MeshFilter>().mesh = GenerateBezMesh(face, i);
+            //bezObject.AddComponent<MeshFilter>();
+            bezObject.AddComponent<MeshFilter>().mesh = GenerateBezMesh(face, i);
             bezObject.AddComponent<MeshRenderer>();
-            bezObject.AddComponent<MeshCollider>();
+            //bezObject.AddComponent<MeshCollider>();
             if (useRippedTextures)
                 bezObject.renderer.material = FetchMaterial(face);
             else
@@ -83,12 +84,11 @@ public class GenerateMap : MonoBehaviour
     void GeneratePolygonObject(Face face)
     {
         GameObject faceObject = new GameObject("BSPface " + faceCount.ToString());
-
+        faceObject.transform.parent = gameObject.transform;
         // Our GeneratePolygonMesh will optimze and add the UVs for us
-        faceObject.AddComponent<MeshFilter>();
-        faceObject.GetComponent<MeshFilter>().mesh = GeneratePolygonMesh(face);
+        faceObject.AddComponent<MeshFilter>().mesh = GeneratePolygonMesh(face);
         faceObject.AddComponent<MeshRenderer>();
-        faceObject.AddComponent<MeshCollider>();
+        //faceObject.AddComponent<MeshCollider>();
         if (useRippedTextures)
         {
             faceObject.renderer.material = FetchMaterial(face);
@@ -96,7 +96,7 @@ public class GenerateMap : MonoBehaviour
         {
             faceObject.renderer.material = replacementTexture;
         }
-        faceObject.transform.parent = gameObject.transform;
+
     }
     #endregion
 
