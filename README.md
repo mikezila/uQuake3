@@ -1,4 +1,4 @@
-# uQuake
+# uQuake 3
 
 Load Quake 3 maps into Unity3D
 
