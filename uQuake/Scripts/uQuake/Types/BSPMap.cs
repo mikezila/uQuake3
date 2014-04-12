@@ -23,7 +23,6 @@ namespace SharpBSP
         public TextureLump textureLump;
         public VertexLump vertexLump;
         public FaceLump faceLump;
-        public MeshvertLump meshvertLump;
         public LightmapLump lightmapLump;
 
         public BSPMap(string filename, bool loadFromPK3)
@@ -88,8 +87,8 @@ namespace SharpBSP
             // Load Entity String
             // It's just one big mutha' string with a length defined in the header.
             // This is the only lump that may not end on an even four-byte block
-            BSP.BaseStream.Seek(header.directory [0].offset, SeekOrigin.Begin);
-            entityLump = new EntityLump(new String(BSP.ReadChars(header.directory [0].length)));
+            BSP.BaseStream.Seek(header.Directory [0].Offset, SeekOrigin.Begin);
+            entityLump = new EntityLump(new String(BSP.ReadChars(header.Directory [0].Length)));
         }
 
         private void ReadTextures()
@@ -98,42 +97,40 @@ namespace SharpBSP
             // object inside of the texturelump's list for each of them.
             // Note that these aren't actually the texture graphics themselves, they're definitions
             // for getting the texture from an external source.
-            textureLump = new TextureLump();
-            BSP.BaseStream.Seek(header.directory [1].offset, SeekOrigin.Begin);
+            BSP.BaseStream.Seek(header.Directory [1].Offset, SeekOrigin.Begin);
             // A texture is 72 bytes, so we use 72 to calculate the number of textures in the lump
-            int textureCount = header.directory [1].length / 72;
+            int textureCount = header.Directory [1].Length / 72;
+            textureLump = new TextureLump(textureCount);
             for (int i = 0; i < textureCount; i++)
             {
-                textureLump.textures.Add(new Texture(new string(BSP.ReadChars(64)), BSP.ReadInt32(), BSP.ReadInt32()));
+                textureLump.Textures [i] = new Texture(new string(BSP.ReadChars(64)), BSP.ReadInt32(), BSP.ReadInt32());
             }
         }
-
-
 
         private void ReadVertexes()
         {
             // Calc how many verts there are, them rip them into the vertexLump
-            vertexLump = new VertexLump();
-            BSP.BaseStream.Seek(header.directory [10].offset, SeekOrigin.Begin);
+            BSP.BaseStream.Seek(header.Directory [10].Offset, SeekOrigin.Begin);
             // A vertex is 44 bytes, so use that to calc how many there are using the lump length from the header
-            int vertCount = header.directory [10].length / 44;
+            int vertCount = header.Directory [10].Length / 44;
+            vertexLump = new VertexLump(vertCount);
             for (int i = 0; i < vertCount; i++)
             {
-                vertexLump.verts.Add(new Vertex(new Vector3(BSP.ReadSingle(), BSP.ReadSingle(), BSP.ReadSingle()), BSP.ReadSingle(), BSP.ReadSingle(), BSP.ReadSingle(), BSP.ReadSingle(), new Vector3(BSP.ReadSingle(), BSP.ReadSingle(), BSP.ReadSingle()), BSP.ReadBytes(4)));
+                vertexLump.Verts [i] = new Vertex(new Vector3(BSP.ReadSingle(), BSP.ReadSingle(), BSP.ReadSingle()), BSP.ReadSingle(), BSP.ReadSingle(), BSP.ReadSingle(), BSP.ReadSingle(), new Vector3(BSP.ReadSingle(), BSP.ReadSingle(), BSP.ReadSingle()), BSP.ReadBytes(4));
             }
 
         }
 
         private void ReadFaces()
         {
-            faceLump = new FaceLump();
-            BSP.BaseStream.Seek(header.directory [13].offset, SeekOrigin.Begin);
+            BSP.BaseStream.Seek(header.Directory [13].Offset, SeekOrigin.Begin);
             // A face is 104 bytes of data, so the count is lenght of the lump / 104.
-            int faceCount = header.directory [13].length / 104;
+            int faceCount = header.Directory [13].Length / 104;
+            faceLump = new FaceLump(faceCount);
             for (int i = 0; i < faceCount; i++)
             {
                 // This is pretty fucking intense.
-                faceLump.faces.Add(new Face(BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), new int[]
+                faceLump.Faces [i] = new Face(BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), BSP.ReadInt32(), new int[]
                 {
                     BSP.ReadInt32(),
                     BSP.ReadInt32()
@@ -149,35 +146,29 @@ namespace SharpBSP
                 {
                     BSP.ReadInt32(),
                     BSP.ReadInt32()
-                }));
+                });
             }
         }
-
-
 
         private void ReadMeshVerts()
         {
-            meshvertLump = new MeshvertLump();
-            BSP.BaseStream.Seek(header.directory [11].offset, SeekOrigin.Begin);
+            BSP.BaseStream.Seek(header.Directory [11].Offset, SeekOrigin.Begin);
             // a meshvert is just a 4-byte int, so there are lumplength/4 meshverts
-            int meshvertCount = header.directory [11].length / 4;
-            for (int i = 0; i < meshvertCount; i++)
-            {
-                meshvertLump.meshVerts.Add(BSP.ReadInt32());
-            }
+            int meshvertCount = header.Directory [11].Length / 4;
+            vertexLump.MeshVerts = new int[meshvertCount];
+            for (int i = 0; i<meshvertCount; i++)
+                vertexLump.MeshVerts [i] = BSP.ReadInt32();
         }
 
-        // Lightmaps are broken right now, this code may be to blame, maybe not.
         private void ReadLightmaps()
         {
-            lightmapLump = new LightmapLump();
-            BSP.BaseStream.Seek(header.directory [14].offset, SeekOrigin.Begin);
+            BSP.BaseStream.Seek(header.Directory [14].Offset, SeekOrigin.Begin);
             // a lightmap is 49152 bytes.  pretty big.  there are length/49152 lightmaps in the lump
-            int lmapCount = header.directory [14].length / 49152;
+            int lmapCount = header.Directory [14].Length / 49152;
+            lightmapLump = new LightmapLump(lmapCount);
             for (int i = 0; i < lmapCount; i++)
             {
-                byte[] colors = BSP.ReadBytes(49152);
-                lightmapLump.AddLight(colors);
+                lightmapLump.Lightmaps [i] = LightmapLump.CreateLightmap(BSP.ReadBytes(49152));
             }
         }
     }

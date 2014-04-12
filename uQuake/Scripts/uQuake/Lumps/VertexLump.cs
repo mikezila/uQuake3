@@ -1,25 +1,27 @@
-﻿using System.Collections.Generic;
+﻿using System.Text;
 
 namespace SharpBSP
 {
     public class VertexLump
     {
-        public List<Vertex> verts = new List<Vertex>();
+		public Vertex[] Verts{ get; set; }
+		public int[] MeshVerts{ get; set; }
 
-        public VertexLump()
+        public VertexLump(int VertexCount)
         {
+			Verts = new Vertex[VertexCount];
         }
 
-        public string PrintInfo()
+        public override string ToString()
         {
-            string blob = "\r\n=== Vertexes =====\r\n";
+			StringBuilder blob = new StringBuilder ();
             int count = 0;
-            foreach (Vertex vert in verts)
+            foreach (Vertex vert in Verts)
             {
-                blob += "Vertex " + count.ToString() + " Pos: " + vert.position.ToString() + " Normal: " + vert.normal.ToString() + "\r\n";
+                blob.Append("Vertex " + count.ToString() + " Pos: " + vert.position.ToString() + " Normal: " + vert.normal.ToString() + "\r\n");
                 count++;
             }
-            return blob;
+            return blob.ToString();
         }
     }
 }

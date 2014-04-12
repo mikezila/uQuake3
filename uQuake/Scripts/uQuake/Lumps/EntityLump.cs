@@ -1,20 +1,25 @@
-﻿
+﻿using System;
+using System.Text;
+
 namespace SharpBSP
 {
     public class EntityLump
     {
-        public string entityString;
+        public string EntityString
+        {
+            get;
+            private set;
+        }
+
 
         public EntityLump(string lump)
         {
-            this.entityString = lump;
+            EntityString = lump;
         }
 
-        public string PrintInfo()
+        public override string ToString()
         {
-            string blob = "\r\n=== Entities =====\r\n";
-            blob += entityString.Replace("\n", "\r\n") + "\r\n";
-            return blob;
+            return EntityString;
         }
     }
 }

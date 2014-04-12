@@ -8,13 +8,14 @@ namespace SharpBSP
 {
     public class LightmapLump
     {
-        public List<Texture2D> lightmaps = new List<Texture2D>();
+        public Texture2D[] Lightmaps { get; set; }
 
-        public LightmapLump()
+        public LightmapLump(int lightmapCount)
         {
+            Lightmaps = new Texture2D[lightmapCount];
         }
 
-        byte CalcLight(byte color)
+        private static byte CalcLight(byte color)
         {
             int icolor = (int)color;
             //icolor += 200;
@@ -27,17 +28,18 @@ namespace SharpBSP
             return (byte)icolor;
         }
 
-        public void AddLight(byte[] rgb)
+        public static Texture2D CreateLightmap(byte[] rgb)
         {
             Texture2D tex = new Texture2D(128, 128, TextureFormat.RGBA32, false);
-            List<Color> colors = new List<Color>();
-            for (int i = 0; i < 49152; i += 3)
+            Color32[] colors = new Color32[128 * 128];
+            int j = 0;
+            for (int i = 0; i < 128 * 128; i++)
             {
-                colors.Add(new Color32(CalcLight(rgb [i]), CalcLight(rgb [i + 1]), CalcLight(rgb [i + 2]), (byte)1f));
+                colors [i] = new Color32(CalcLight(rgb [j++]), CalcLight(rgb [j++]), CalcLight(rgb [j++]), (byte)1f);
             }
-            tex.SetPixels(colors.ToArray());
+            tex.SetPixels32(colors);
             tex.Apply();
-            lightmaps.Add(tex);
+            return tex;
         }
     }
 }

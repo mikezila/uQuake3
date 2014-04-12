@@ -3,28 +3,37 @@ namespace SharpBSP
 {
     public class BSPDirectoryEntry
     {
-        public int offset;
-        public int length;
-        public string name;
+        public int Offset
+        {
+            get;
+            private set;
+        }
+
+        public int Length
+        {
+            get;
+            private set;
+        }
+
+        public string Name
+        {
+            get;
+            set;
+        }
+
 
         public BSPDirectoryEntry(int offset, int length)
         {
-            this.offset = offset;
-            this.length = length;
-        }
-
-        public string GetName()
-        {
-            return name;
+            Offset = offset;
+            Length = length;
         }
 
         public bool Validate()
         {
-            if (length % 4 == 0)
+            if (Length % 4 == 0)
             {
                 return true;
-            }
-            else
+            } else
             {
                 return false;
             }

@@ -38,8 +38,6 @@ namespace SharpBSP
             this.lm_vecs = lm_vecs;
             this.normal = normal;
             this.size = size;
-        }
-
-        
+        } 
     }
 }

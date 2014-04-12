@@ -5,76 +5,88 @@ namespace SharpBSP
 {
     public class BSPHeader
     {
-        public string magic;
-        public uint version;
-        public List<BSPDirectoryEntry> directory;
+		public BSPDirectoryEntry[] Directory {
+			get;
+			set;
+		}
+
+		public string Magic {
+			get;
+			private set;
+		}
+
+		public uint Version {
+			get;
+			private set;
+		}
+
         private BinaryReader BSP;
+
+		private const int LumpCount = 17;
 
         public BSPHeader(BinaryReader BSP)
         {
             this.BSP = BSP;
 
-            this.magic = ReadMagic();
-            this.version = ReadVersion();
-            this.directory = ReadLumps();
+            ReadMagic();
+            ReadVersion();
+            ReadLumps();
         }
 
         public string PrintInfo()
         {
             string blob = "\r\n=== BSP Header =====\r\n";
-            blob += ("Magic Number: " + magic + "\r\n");
-            blob += ("BSP Version: " + version + "\r\n");
+            blob += ("Magic Number: " + Magic + "\r\n");
+            blob += ("BSP Version: " + Version + "\r\n");
             blob += ("Header Directory:\r\n");
             int count = 0;
-            foreach (BSPDirectoryEntry entry in directory)
+            foreach (BSPDirectoryEntry entry in Directory)
             {
-                blob += ("Lump " + count + ": " + entry.name + " Offset: " + entry.offset + " Length: " + entry.length + "\r\n");
+                blob += ("Lump " + count + ": " + entry.Name + " Offset: " + entry.Offset + " Length: " + entry.Length + "\r\n");
                 count++;
             }
             return blob;
         }
 
-        private List<BSPDirectoryEntry> ReadLumps()
+        private void ReadLumps()
         {
-            List<BSPDirectoryEntry> lumps = new List<BSPDirectoryEntry>();
+            Directory = new BSPDirectoryEntry[LumpCount];
             for (int i = 0; i < 17; i++)
             {
-                lumps.Add(new BSPDirectoryEntry(BSP.ReadInt32(), BSP.ReadInt32()));
+                Directory[i] = new BSPDirectoryEntry(BSP.ReadInt32(), BSP.ReadInt32());
             }
 
-            lumps[0].name = "Entities";
-            lumps[1].name = "Textures";
-            lumps[2].name = "Planes";
-            lumps[3].name = "Nodes";
-            lumps[4].name = "Leafs";
-            lumps[5].name = "Leaf faces";
-            lumps[6].name = "Leaf brushes";
-            lumps[7].name = "Models";
-            lumps[8].name = "Brushes";
-            lumps[9].name = "Brush sides";
-            lumps[10].name = "Vertexes";
-            lumps[11].name = "Mesh vertexes";
-            lumps[12].name = "Effects";
-            lumps[13].name = "Faces";
-            lumps[14].name = "Lightmaps";
-            lumps[15].name = "Light volumes";
-            lumps[16].name = "Vis data";
-
-            return lumps;
+            Directory[0].Name = "Entities";
+			Directory[1].Name = "Textures";
+			Directory[2].Name = "Planes";
+			Directory[3].Name = "Nodes";
+			Directory[4].Name = "Leafs";
+			Directory[5].Name = "Leaf faces";
+			Directory[6].Name = "Leaf brushes";
+			Directory[7].Name = "Models";
+			Directory[8].Name = "Brushes";
+			Directory[9].Name = "Brush sides";
+			Directory[10].Name = "Vertexes";
+			Directory[11].Name = "Mesh vertexes";
+			Directory[12].Name = "Effects";
+			Directory[13].Name = "Faces";
+			Directory[14].Name = "Lightmaps";
+			Directory[15].Name = "Light volumes";
+			Directory[16].Name = "Vis data";
         }
 
-        private string ReadMagic()
+        private void ReadMagic()
         {
             BSP.BaseStream.Seek(0, SeekOrigin.Begin);
-            return new string(BSP.ReadChars(4));
+            Magic = new string(BSP.ReadChars(4));
         }
 
 
 
-        private uint ReadVersion()
+        private void ReadVersion()
         {
             BSP.BaseStream.Seek(4, SeekOrigin.Begin);
-            return BSP.ReadUInt32();
+            Version = BSP.ReadUInt32();
         }
     }
 }

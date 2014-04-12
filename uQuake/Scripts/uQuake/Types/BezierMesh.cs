@@ -4,18 +4,18 @@ using System.Collections.Generic;
 
 public class BezierMesh
 {
-    public Mesh mesh
+    public Mesh Mesh
     {
         get
         {
-            return _mesh;
+            return mesh;
         }
         private set
         {
-            _mesh = value;
+            mesh = value;
         }
     }
-    private Mesh _mesh;
+    private Mesh mesh;
     public List<Vector2> uvs;
 
     // Calculate UVs for our tessellated vertices 

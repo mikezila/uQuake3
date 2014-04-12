@@ -28,7 +28,7 @@ public class GenerateMap : MonoBehaviour
             map = new BSPMap("Assets/baseq3/maps/" + mapName, false);
 
         // Each face is its own gameobject
-        foreach (Face face in map.faceLump.faces)
+        foreach (Face face in map.faceLump.Faces)
         {
             if (face.type == 2)
             {
@@ -67,7 +67,6 @@ public class GenerateMap : MonoBehaviour
             GameObject bezObject = new GameObject();
             bezObject.transform.parent = gameObject.transform;
             bezObject.name = "BSPface (bez) " + faceCount.ToString();
-            //bezObject.AddComponent<MeshFilter>();
             bezObject.AddComponent<MeshFilter>().mesh = GenerateBezMesh(face, i);
             bezObject.AddComponent<MeshRenderer>();
             //bezObject.AddComponent<MeshCollider>();
@@ -75,6 +74,7 @@ public class GenerateMap : MonoBehaviour
                 bezObject.renderer.material = FetchMaterial(face);
             else
                 bezObject.renderer.material = replacementTexture;
+            bezObject.isStatic = true;
         }
     }
 
@@ -90,14 +90,12 @@ public class GenerateMap : MonoBehaviour
         faceObject.AddComponent<MeshRenderer>();
         //faceObject.AddComponent<MeshCollider>();
         if (useRippedTextures)
-        {
             faceObject.renderer.material = FetchMaterial(face);
-        } else
-        {
+        else
             faceObject.renderer.material = replacementTexture;
-        }
-
+        faceObject.isStatic = true;
     }
+
     #endregion
 
     #region Mesh Generation
@@ -143,7 +141,7 @@ public class GenerateMap : MonoBehaviour
         int vertStep = face.vertex;
         for (int i = 0; i < face.n_vertexes; i++)
         {
-            vertGrid [gridXstep, gridYstep] = map.vertexLump.verts [vertStep];
+            vertGrid [gridXstep, gridYstep] = map.vertexLump.Verts [vertStep];
             vertStep++;
             gridXstep++;
             if (gridXstep == face.size [0])
@@ -217,7 +215,7 @@ public class GenerateMap : MonoBehaviour
         Mesh bezMesh = new Mesh();
         bezMesh.name = "BSPfacemesh (bez)";
         BezierMesh bezPatch = new BezierMesh(tessellations, bverts, uvs, uv2s);
-        return bezPatch.mesh;
+        return bezPatch.Mesh;
     }
 
     // Generate a mesh for a simple polygon/mesh face
@@ -236,9 +234,9 @@ public class GenerateMap : MonoBehaviour
         int vstep = face.vertex;
         for (int i = 0; i < face.n_vertexes; i++)
         {
-            verts.Add(map.vertexLump.verts [vstep].position);
-            uvs.Add(map.vertexLump.verts [vstep].texcoord);
-            uv2s.Add(map.vertexLump.verts [vstep].lmcoord);
+            verts.Add(map.vertexLump.Verts [vstep].position);
+            uvs.Add(map.vertexLump.Verts [vstep].texcoord);
+            uv2s.Add(map.vertexLump.Verts [vstep].lmcoord);
             vstep++;
         }
 
@@ -254,7 +252,7 @@ public class GenerateMap : MonoBehaviour
         int mstep = face.meshvert;
         for (int i = 0; i < face.n_meshverts; i++)
         {
-            mverts.Add(map.meshvertLump.meshVerts [mstep]);
+            mverts.Add(map.vertexLump.MeshVerts [mstep]);
             mstep++;
         }
 
@@ -274,7 +272,7 @@ public class GenerateMap : MonoBehaviour
     // This returns a material with the correct texture for a given face
     Material FetchMaterial(Face face)
     {
-        string texName = map.textureLump.textures [face.texture].name;
+        string texName = map.textureLump.Textures [face.texture].Name;
 
         // Load the primary texture for the face from the texture lump
         // The texture lump itself will have already looked over all
@@ -296,7 +294,7 @@ public class GenerateMap : MonoBehaviour
             Material bspMaterial = new Material(Shader.Find("Legacy Shaders/Lightmapped/Diffuse"));
 
             // LM experiment
-            Texture2D lmap = map.lightmapLump.lightmaps [face.lm_index];
+            Texture2D lmap = map.lightmapLump.Lightmaps [face.lm_index];
             lmap.Compress(true);
             lmap.Apply();
 
@@ -311,9 +309,9 @@ public class GenerateMap : MonoBehaviour
             bspMaterial.mainTexture = tex;
             return bspMaterial;
         }
-        #endregion
+        
     }
-
+	#endregion
 }
 
 

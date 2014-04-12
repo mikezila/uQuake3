@@ -3,23 +3,25 @@ using UnityEngine;
 using Ionic.Zip;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace SharpBSP
 {
     public class TextureLump
     {
-        public List<Texture> textures = new List<Texture>();
+		public Texture[] Textures{ get; set; }
         private Dictionary<string,Texture2D> readyTextures = new Dictionary<string, Texture2D>();
 
-        public TextureLump()
+        public TextureLump(int textureCount)
         {
+			Textures = new Texture[textureCount];
         }
 
         public int TextureCount
         { 
             get
             {
-                return textures.Count; 
+                return Textures.Length; 
             } 
         }
 
@@ -49,13 +51,13 @@ namespace SharpBSP
 
         private void LoadJPGTextures(ZipFile pk3)
         {
-            foreach (Texture tex in textures)
+            foreach (Texture tex in Textures)
             {
                 // The size of the new Texture2D object doesn't matter. It will be replaced (including its size) with the data from the .jpg texture that's getting pulled from the pk3 file.
-                if (pk3.ContainsEntry(tex.name + ".jpg"))
+                if (pk3.ContainsEntry(tex.Name + ".jpg"))
                 {
                     Texture2D readyTex = new Texture2D(4, 4);
-                    var entry = pk3 [tex.name + ".jpg"];
+                    var entry = pk3 [tex.Name + ".jpg"];
                     using (var stream = entry.OpenReader())
                     {
                         var ms = new MemoryStream();
@@ -63,29 +65,29 @@ namespace SharpBSP
                         readyTex.LoadImage(ms.GetBuffer());
                     }
                     
-                    readyTex.name = tex.name;
+                    readyTex.name = tex.Name;
                     readyTex.filterMode = FilterMode.Trilinear;
                     readyTex.Compress(true);
                     
-                    if (readyTextures.ContainsKey(tex.name))
+                    if (readyTextures.ContainsKey(tex.Name))
                     {
-                        Debug.Log("Updating texture with name " + tex.name);
-                        readyTextures [tex.name] = readyTex;
+                        Debug.Log("Updating texture with name " + tex.Name);
+                        readyTextures [tex.Name] = readyTex;
                     } else
-                        readyTextures.Add(tex.name, readyTex);
+                        readyTextures.Add(tex.Name, readyTex);
                 }
             }
         }
 
         private void LoadTGATextures(ZipFile pk3)
         {
-            foreach (Texture tex in textures)
+            foreach (Texture tex in Textures)
             {
                 // The size of the new Texture2D object doesn't matter. It will be replaced (including its size) with the data from the texture that's getting pulled from the pk3 file.
-                if (pk3.ContainsEntry(tex.name + ".tga"))
+                if (pk3.ContainsEntry(tex.Name + ".tga"))
                 {
                     Texture2D readyTex = new Texture2D(4, 4);
-                    var entry = pk3 [tex.name + ".tga"];
+                    var entry = pk3 [tex.Name + ".tga"];
                     using (var stream = entry.OpenReader())
                     {
                         var ms = new MemoryStream();
@@ -93,16 +95,16 @@ namespace SharpBSP
                         readyTex = TGALoader.LoadTGA(ms);
                     }
 
-                    readyTex.name = tex.name;
+                    readyTex.name = tex.Name;
                     readyTex.filterMode = FilterMode.Trilinear;
                     readyTex.Compress(true);
 
-                    if (readyTextures.ContainsKey(tex.name))
+                    if (readyTextures.ContainsKey(tex.Name))
                     {
-                        Debug.Log("Updating texture with name " + tex.name + ".tga");
-                        readyTextures [tex.name] = readyTex;
+                        Debug.Log("Updating texture with name " + tex.Name + ".tga");
+                        readyTextures [tex.Name] = readyTex;
                     } else
-                        readyTextures.Add(tex.name, readyTex);
+                        readyTextures.Add(tex.Name, readyTex);
                 }
             }
         }
@@ -110,13 +112,13 @@ namespace SharpBSP
 
         public string PrintInfo()
         {
-            string blob = "\r\n=== Textures =====\r\n";
+			StringBuilder blob = new StringBuilder ();
             int count = 0;
-            foreach (Texture tex in textures)
+            foreach (Texture tex in Textures)
             {
-                blob += ("Texture " + count++ + " Name: " + tex.name.Trim() + "\tFlags: " + tex.flags.ToString() + "\tContents: " + tex.contents.ToString() + "\r\n");
+                blob.Append("Texture " + count++ + " Name: " + tex.Name.Trim() + "\tFlags: " + tex.Flags.ToString() + "\tContents: " + tex.Contents.ToString() + "\r\n");
             }
-            return blob;
+            return blob.ToString();
         }
     }
 }
