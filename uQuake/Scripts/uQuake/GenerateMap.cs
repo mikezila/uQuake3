@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEditor;
 using System;
 using SharpBSP;
 using System.Collections;
@@ -6,9 +7,29 @@ using System.Collections.Generic;
 using Ionic.Zip;
 using System.IO;
 
+// http://answers.unity3d.com/questions/126048/create-a-button-in-the-inspector.html#answer-360940
+[CustomEditor(typeof(GenerateMap))]
+class GenerateMapCustomEditor : Editor {
+	public override void OnInspectorGUI() {
+		DrawDefaultInspector();
+		GenerateMap script = (GenerateMap)target;
+		if(GUILayout.Button("Generate Map")) {
+			Debug.Log ("Generate Map: " + script.mapName);
+			script.Run();
+		}
+		if(GUILayout.Button("Clear Map")) {
+			// http://forum.unity3d.com/threads/deleting-all-chidlren-of-an-object.92827/
+			var children = new List<GameObject>();
+			foreach (Transform child in script.gameObject.transform) children.Add(child.gameObject);
+			children.ForEach(child => DestroyImmediate(child));
+		}
+	}
+}
+
 public class GenerateMap : MonoBehaviour
 {
-    public Material replacementTexture;
+	public bool generateAtRuntime = true;
+	public Material replacementTexture;
     public bool useRippedTextures;
     public bool renderBezPatches;
     public string mapName;
@@ -18,8 +39,12 @@ public class GenerateMap : MonoBehaviour
     private int faceCount = 0;
     private BSPMap map;
 
-    void Awake()
-    {        
+    void Awake() {
+		if (generateAtRuntime)
+			Run();
+	}
+
+	public void Run() {
         // Create a new BSPmap, which is an object that
         // represents the map and all its data as a whole
         if (mapIsInsidePK3)
