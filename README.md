@@ -49,6 +49,6 @@ Short answer: no.
 
 Long answer: Probably not.  I have a sister project to this one that loads Quake 1 maps, but Quake 1 maps are very different than Quake 3 maps.  Quake 2 is somewhere in the middle.  Half-Life is very very close to Quake 1.  Half-Life 2 is more complex than the others, but would be doable I think.  It would require its own project, though.  I'm not sure it would work very well.  Half-Life 2's levels require a lot of props and image effects for their final look and feel, and that would be hard to recreate in Unity with just the data in the map.
 
-## Can I fork/use this?
+## Can I fork/use this?  What license is this?
 
-By all means.  You don't need to give me any credit or anything.  Have fun. 
+By all means.  You don't need to give me any credit or anything.  Have fun.  This project is in the public domain.
